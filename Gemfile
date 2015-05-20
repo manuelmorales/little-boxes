@@ -5,4 +5,5 @@ gemspec
 group :test, :development do
   gem 'rspec'
   gem 'pry'
+  gem 'rerun'
 end

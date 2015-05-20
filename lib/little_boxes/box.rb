@@ -1,4 +1,4 @@
 module LittleBoxes
-  class MyClass
+  class Box
   end
 end
