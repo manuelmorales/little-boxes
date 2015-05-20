@@ -1,0 +1,3 @@
+module LittleBoxes
+  VERSION = "0.0.1"
+end
