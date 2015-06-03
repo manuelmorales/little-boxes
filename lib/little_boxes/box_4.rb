@@ -30,6 +30,11 @@ module LittleBoxes
       registry[name] = LazyDependant.new self, &block
     end
 
+    def custom_dependant name, &block
+      registry[name] = LazyDependant.new self
+      ForwardingDsl.run registry[name], &block
+    end
+
     def get name
       (registry[name] || missing!(name)).get
     end
@@ -57,10 +62,36 @@ module LittleBoxes
         @value ||= begin
                      ForwardingDsl.run(context, &build_block).tap do |v|
                        v.dependencies.each do |name, options|
-                         v.send("#{name}=", context.get(name))
+                         v.send("#{name}=", resolve(name, options))
                        end
                      end
                    end
+      end
+
+      def resolve name, options = nil
+        options ||= {}
+
+        if v = registry[name]
+          v.get
+        elsif v = context.registry[name]
+          v.get
+        elsif v = options[:suggestion]
+          v.call context
+        else
+          raise(MissingDependency.new "Could not find #{name}")
+        end
+      end
+
+      def registry
+        @registry ||= {}
+      end
+
+      def let name, &block
+        registry[name] = Lazy.new self, &block
+      end
+
+      def build &block
+        @build_block = block
       end
     end
 

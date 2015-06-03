@@ -61,8 +61,43 @@ describe LittleBoxes::Box4 do
     expect(subject.server_class.host).to eq 'localhost'
   end
 
-  # it 'supports mentioning other registers'
-  # it 'supports overriding specific attributes'
+  it 'supports overriding specific attributes' do
+    server_class = Class.new do
+      attr_accessor :logger
+
+      def dependencies
+        {logger: nil}
+      end
+    end
+
+    subject.let(:logger) { :logger }
+    subject.let(:new_logger) { :new_logger }
+
+    subject.custom_dependant(:server) do
+      build { server_class.new }
+      let(:logger) { :new_logger }
+    end
+
+    expect(subject.server.logger).to be :new_logger
+  end
+
+  it 'supports suggestions' do
+    server_class = Class.new do
+      attr_accessor :log
+
+      def dependencies
+        {log: {suggestion: ->(a){ a.logger } } }
+      end
+    end
+
+    subject.let(:logger) { :logger }
+
+    subject.dependant(:server) { server_class.new }
+
+    expect(subject.server.log).to be :logger
+  end
+
+  # it 'suggestions within sections'
   # it 'supports overriding specific attributes by inheritance'
   # it 'supports defining registers at class level'
   # it 'has dependencies defined at instance level'
