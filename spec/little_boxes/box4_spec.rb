@@ -106,6 +106,24 @@ describe LittleBoxes::Box4 do
     expect(subject.loggers.null).to be :null_logger
   end
 
+  it 'supports finding dependencies upwards in the ancestry' do
+    server_class = Class.new do
+      attr_accessor :logger
+
+      def dependencies
+        {logger: nil}
+      end
+    end
+
+    subject.let(:logger) { :logger }
+
+    subject.section :servers do
+      dependant(:one) { server_class.new }
+    end
+
+    expect(subject.servers.one.logger).to be :logger
+  end
+
   # it 'suggestions within sections'
   # it 'supports overriding specific attributes by inheritance'
   # it 'supports defining registers at class level'

@@ -2,20 +2,34 @@ require 'forwarding_dsl'
 
 module LittleBoxes
   class Box4
+    attr_accessor :fallback
+
+    def initialize fallback = {}
+      @fallback = fallback
+    end
+
     def method_missing name, *args, &block
-      if registry[name]
-        registry[name].get
+      if self[name]
+        self[name].get
       else
         super
       end
     end
 
     def respond_to_missing? name, *args
-      !!registry[name] || super
+      !!self[name] || super
     end
 
     def registry
       @registry ||= {}
+    end
+
+    def [] name
+      registry[name] || fallback[name]
+    end
+
+    def []= name, value
+      registry[name]= value
     end
 
     def clear
@@ -23,26 +37,26 @@ module LittleBoxes
     end
 
     def let name, &block
-      registry[name] = Lazy.new self, &block
+      self[name] = Lazy.new self, &block
     end
 
     def dependant name, &block
-      registry[name] = LazyDependant.new self, &block
+      self[name] = LazyDependant.new self, &block
     end
 
     def custom_dependant name, &block
-      registry[name] = LazyDependant.new self
-      ForwardingDsl.run registry[name], &block
+      self[name] = LazyDependant.new self
+      ForwardingDsl.run self[name], &block
     end
 
     def get name
-      (registry[name] || missing!(name)).get
+      (self[name] || missing!(name)).get
     end
 
     def section name, &block
-      registry[name] = LazyDependant.new self
-      registry[name].build { this.class.new }
-      ForwardingDsl.run registry[name].get, &block
+      self[name] = LazyDependant.new self
+      self[name].build { this.class.new this }
+      ForwardingDsl.run self[name].get, &block
     end
 
     def dependencies
@@ -83,7 +97,7 @@ module LittleBoxes
 
         if v = registry[name]
           v.get
-        elsif v = context.registry[name]
+        elsif v = context[name]
           v.get
         elsif v = options[:suggestion]
           v.call context
