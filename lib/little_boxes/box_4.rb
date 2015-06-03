@@ -39,6 +39,16 @@ module LittleBoxes
       (registry[name] || missing!(name)).get
     end
 
+    def section name, &block
+      registry[name] = LazyDependant.new self
+      registry[name].build { this.class.new }
+      ForwardingDsl.run registry[name].get, &block
+    end
+
+    def dependencies
+      {}
+    end
+
     private
 
     def missing! name

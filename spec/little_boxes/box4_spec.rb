@@ -97,6 +97,15 @@ describe LittleBoxes::Box4 do
     expect(subject.server.log).to be :logger
   end
 
+  it 'supports sections' do
+    subject.section :loggers do
+      let(:null) { :null_logger }
+      let(:file) { :file_logger }
+    end
+
+    expect(subject.loggers.null).to be :null_logger
+  end
+
   # it 'suggestions within sections'
   # it 'supports overriding specific attributes by inheritance'
   # it 'supports defining registers at class level'
@@ -107,7 +116,6 @@ describe LittleBoxes::Box4 do
   # it 'has logging'
   # it 'raises meaningful exception if missing register'
   # it 'raises exception if overriding after it has been used'
-  # it 'supports sections'
   # it 'supports overriding dependency resolution with sub-section'
   # it 'supports overriding attributes in sub-section'
 end
