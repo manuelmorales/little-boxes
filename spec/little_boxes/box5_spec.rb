@@ -1,7 +1,8 @@
 require_relative '../spec_helper'
 
 describe LittleBoxes::Box5 do
-  subject{ LittleBoxes::Box5.new }
+  subject{ subject_class.new }
+  let(:subject_class) { LittleBoxes::Box5 }
 
   it 'can build instances' do
     expect(subject).to be_a(LittleBoxes::Box5)
@@ -137,7 +138,7 @@ describe LittleBoxes::Box5 do
       attr_accessor :log
 
       def dependencies
-        {log: {suggestion: ->(a){ a.find(:logger).get } } }
+        {log: {suggestion: ->(a){ a.logger } } }
       end
     end
 
@@ -150,15 +151,61 @@ describe LittleBoxes::Box5 do
     expect(subject.servers.apache.log).to be :logger
   end
 
-  # it 'supports defining registers at class level'
-  # it 'supports overriding specific attributes by inheritance'
-  # it 'has dependencies defined at instance level'
-  # it 'supports definitions at class level'
-  # it 'supports overriding from the outside'
+  it 'supports defining registers at class level' do
+    subject_class = Class.new LittleBoxes::Box5 do
+      let(:loglevel) { 0 }
+    end
+
+    subject = subject_class.new
+
+    expect(subject.loglevel).to eq 0
+  end
+
+  it 'does not share objects with the different instances' do
+    subject_class = Class.new LittleBoxes::Box5 do
+      let(:loglevel) { '0' }
+    end
+
+    subject_1 = subject_class.new
+    subject_2 = subject_class.new
+
+    expect(subject_1.loglevel).not_to be subject_2.loglevel
+  end
+
+  it 'has nice inspect' do
+    subject.let(:loglevel) { 0 }
+    subject.let(:logger) { 0 }
+    expect(subject.inspect).to eq "<LittleBoxes::Box5 box: loglevel logger>"
+  end
+
+  it 'has nice class inspect' do
+    subject_class = Class.new LittleBoxes::Box5 do
+      let(:loglevel) { 0 }
+      let(:logger) { 0 }
+    end
+
+    expect(subject_class.inspect).to eq "Box(loglevel logger)"
+  end
+
+  it 'supports overriding specific attributes by inheritance' do
+    subject_class_1 = Class.new LittleBoxes::Box5 do
+      let(:loglevel) { 0 }
+      let(:logger) { :logger }
+    end
+
+    subject_class_2 = Class.new subject_class_1 do
+      let(:loglevel) { 1 }
+    end
+
+    subject_2 = subject_class_2.new
+
+    expect(subject_2.loglevel).to eq 1
+    expect(subject_2.logger).to eq :logger
+  end
+
+  # it 'supports overriding dependants in sections from the outside'
+  # it 'supports overriding dependants attributes from the outside'
   # it 'warns if overriding by mistake'
   # it 'has logging'
-  # it 'raises meaningful exception if missing register'
   # it 'raises exception if overriding after it has been used'
-  # it 'supports overriding dependency resolution with sub-section'
-  # it 'supports overriding attributes in sub-section'
 end
