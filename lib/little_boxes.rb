@@ -10,4 +10,6 @@ module LittleBoxes
   autoload :App3, 'little_boxes/app_3'
   autoload :Box4, 'little_boxes/box_4'
   autoload :App4, 'little_boxes/app_4'
+  autoload :Box5, 'little_boxes/box_5'
+  autoload :App5, 'little_boxes/app_5'
 end
