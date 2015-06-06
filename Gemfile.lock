@@ -3,6 +3,7 @@ PATH
   specs:
     little_boxes (0.0.1)
       forwarding_dsl
+      mini_object
 
 GEM
   remote: https://rubygems.org/
@@ -19,6 +20,7 @@ GEM
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9)
     method_source (0.8.2)
+    mini_object (0.0.2)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)

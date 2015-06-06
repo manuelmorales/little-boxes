@@ -203,9 +203,117 @@ describe LittleBoxes::Box5 do
     expect(subject_2.logger).to eq :logger
   end
 
-  # it 'supports overriding dependants in sections from the outside'
-  # it 'supports overriding dependants attributes from the outside'
-  # it 'warns if overriding by mistake'
-  # it 'has logging'
-  # it 'raises exception if overriding after it has been used'
+  it 'supports overriding dependants attributes from the outside' do
+    server_class = Class.new do
+      attr_accessor :logger
+
+      def dependencies
+        {logger: nil}
+      end
+    end
+
+    subject.let(:logger) { :logger }
+
+    subject.dependant(:server) { server_class.new }
+
+    subject.customize(:server) do
+      let(:logger) { :new_logger }
+    end
+
+    expect(subject.server.logger).to be :new_logger
+  end
+
+  it 'has a path' do
+    first_class = Class.new LittleBoxes::Box5 do
+      section :second do
+        section :third do
+        end
+      end
+    end
+
+    first = first_class.new
+
+    expect(first.second.third.path).to eq [first, first.second, first.second.third]
+  end
+
+  it 'names sections' do
+    first_class = Class.new LittleBoxes::Box5 do
+      section :second do
+        section :third do
+        end
+      end
+    end
+
+    first = first_class.new name: :first
+
+    expect(first.second.third.path.map(&:name)).to eq [:first, :second, :third]
+  end
+
+  it 'has a reset' do
+    first_class = Class.new LittleBoxes::Box5 do
+      section :second do
+        let(:logger) { Object.new }
+      end
+    end
+
+    first = first_class.new name: :first
+
+    old_logger = first.second.logger
+    first.reset
+    expect(first.second.logger).not_to be old_logger
+  end
+
+  it 'has a root' do
+    first_class = Class.new LittleBoxes::Box5 do
+      section :second do
+        section :third do
+        end
+      end
+    end
+
+    first = first_class.new
+
+    expect(first.second.third.root).to eq first
+  end
+
+  it 'assigns dependencies with lambdas' do
+    server_class = Class.new do
+      include LittleBoxes::Box5::Dependant
+
+      dependency :logger
+    end
+
+    subject.dependant(:server) { server_class.new }
+
+    subject.let(:logger) { :old }
+    expect(subject.server.logger).to be :old
+
+    subject.let(:logger) { :new }
+    expect(subject.server.logger).to be :new
+  end
+
+  describe 'Dependant' do
+    it 'can be inherited' do
+      class_one = Class.new do
+        include LittleBoxes::Box5::Dependant
+        dependency :one
+      end
+
+      class_two = Class.new class_one do
+        include LittleBoxes::Box5::Dependant
+        dependency :two
+      end
+
+      subject.let(:one) { :one }
+      subject.let(:two) { :two }
+      subject.dependant(:dependant_one) { class_one.new }
+      subject.dependant(:dependant_two) { class_two.new }
+
+      expect(subject.dependant_one.one).to be :one
+      expect(subject.dependant_two.one).to be :one
+      expect(subject.dependant_two.two).to be :two
+    end
+  end
+
+  # it 'has an always executing block'
 end

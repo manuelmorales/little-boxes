@@ -1,18 +1,20 @@
 require 'forwarding_dsl'
+require 'logger'
+require 'mini_object'
 
 module LittleBoxes
   class Box5
     attr_accessor :build_block
-    attr_accessor :context
+    attr_accessor :parent
     attr_accessor :dependencies_block
     attr_accessor :registry
     attr_accessor :name
 
-    def initialize context: nil, dependencies_block: Proc.new{ {} }, &block
-      self.context = context
+    def initialize parent: nil, dependencies_block: Proc.new{ {} }, name: nil, &block
+      self.parent = parent
       self.dependencies_block = dependencies_block 
       self.build_block = block
-
+      self.name = name
       self.registry = {}
 
       self.class.registry.each do |name, value|
@@ -40,7 +42,7 @@ module LittleBoxes
 
     def method_missing name, *args, &block
       if self[name]
-        self[name].get
+        self[name].get self
       else
         super
       end
@@ -50,21 +52,33 @@ module LittleBoxes
       !!self[name] || super
     end
 
-    def get
-      @value ||= ForwardingDsl.run(context, &build_block).tap do |subject|
-        dependencies_block.call(subject).each do |name, options|
-          subject.send("#{name}=", resolve(name, options))
-        end
-      end
+    def get parent
+      @value ||= begin
+                   _logger.debug "Building #{name}"
+
+                   ForwardingDsl.run(parent, &build_block).tap do |subject|
+                     dependencies_block.call(subject).each do |name, options|
+                       options ||= {}
+                       assign_as = options.fetch(:assign_as) { :equal }
+
+                       case assign_as
+                       when :equal then subject.send("#{name}=", resolve(name, options))
+                       when :block then subject.send("#{name}"){ resolve(name, options) }
+                       else
+                         raise "Unexpected assign_as #{assign_as}. Use :equal or :block"
+                       end
+                     end
+                   end
+                 end
     end
 
     def resolve name, options = nil
       options ||= {}
 
       if d = self[name]
-        d.get
+        d.get self
       elsif s = options[:suggestion]
-        s.call context
+        s.call parent
       else
         raise(MissingDependency.new "Could not find #{name}")
       end
@@ -72,20 +86,24 @@ module LittleBoxes
 
     module RegisteringMethods
       def let name, &block
-        self[name] = Box5.new context: self, &block
+        self[name] = Box5.new parent: self, &block
       end
 
       def dependant name, &block
-        self[name] = Box5.new context: self, dependencies_block: ->(s){s.dependencies}, &block
+        self[name] = Box5.new parent: self, dependencies_block: ->(s){s.dependencies}, &block
       end
 
       def custom_dependant name, &block
-        self[name] = Box5.new context: self, dependencies_block: ->(s){s.dependencies}, &block
+        self[name] = Box5.new parent: self, dependencies_block: ->(s){s.dependencies}, &block
+        customize name, &block
+      end
+
+      def customize name, &block
         ForwardingDsl.run self[name], &block
       end
 
       def section name, &block
-        s = Box5.new context: self
+        s = Box5.new parent: self
         s.build { s }
         self[name] = s
         ForwardingDsl.run s, &block
@@ -96,7 +114,7 @@ module LittleBoxes
       end
 
       def [] name
-        registry[name] || (context && context[name])
+        registry[name] || (parent && parent[name])
       end
 
       def []= name, value
@@ -111,20 +129,80 @@ module LittleBoxes
     include RegisteringMethods
     extend RegisteringMethods
 
+    def section name, &block
+      s = Box5.new parent: self
+      s.build { s }
+      self[name] = s
+      ForwardingDsl.run s, &block
+    end
+
+    def self.section name, &block
+      s = Class.new self
+      ForwardingDsl.run s, &block
+      self[name] = Box5.new { s.new name: name, parent: this }
+    end
+
+    def path
+      if parent
+        parent.path + [self]
+      else
+        [self]
+      end
+    end
+
+    def root
+      path.first
+    end
+
     def build &block
       self.build_block = block
     end
 
+    def reset
+      @value = nil
+
+      registry.each do |name, register|
+        register.reset
+      end
+    end
+
     private
+
+    def _logger
+      @_logger ||= NullLogger.new
+    end
+
+    class NullLogger < Logger
+      def initialize; end
+      def add(*args); end
+    end
 
     class MissingDependency < RuntimeError; end
 
     module Dependant
       module ClassMethods
+        def dependency name
+          dependencies[name] = {assign_as: :block}
+          attr_injectable name
+        end
+
+        def dependencies
+          @dependencies ||= {}
+        end
+
+        def inherited klass
+          klass.dependencies.merge! dependencies
+          super
+        end
       end
 
       def self.included klass
         klass.extend ClassMethods
+        klass.include MiniObject::Injectable
+      end
+
+      def dependencies
+        self.class.dependencies
       end
     end
   end
