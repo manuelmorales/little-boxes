@@ -1,48 +1,6 @@
 # LittleBoxes
 
-This is a sample project to clone and use as a template for creating your own Ruby gems.
-By default, the license is copyright attributed to Workshare ltd.
-For open source projects, you can copy the LICENSE.txt from [MiniCheck](https://github.com/workshare/mini-check).
-
-
-## Quick Start
-
-Clone this repo and follow the "to-do":
-
-```bash
-git grep TODO
-```
-
-Create a repo on GitHub or ask Manuel to do it.
-Once you have it, edit origin to point to it instead:
-
-```bash
-git remote rm origin
-git remote add origin git@github.com:workshare/my-gem.git
-git push -u origin master
-```
-
-Example of refatoring with the command line:
-
-```bash
-find -name \*my_class\* -exec rename 's/my_class/service_generator/' {} \;
-find -name \*little_boxes\* -exec rename 's/little_boxes/mini_me/' {} \;
-git add .
-git commit -m "Renamed files"
-
-git ls-files | xargs sed -i -e 's/LittleBoxes/MiniMe/g'
-git ls-files | xargs sed -i -e 's/little_boxes/little_boxes/g'
-
-git ls-files | xargs sed -i -e 's/MyClass/ServiceGenerator/g'
-git ls-files | xargs sed -i -e 's/my_class/service_generator/g'
-
-git add .
-git commit -m "Renamed content"
-
-rake # To make sure everything is OK
-```
-
-
+Dependancy injection framework in Ruby.
 
 
 ## Contributing
@@ -65,4 +23,6 @@ $ gem bump --version patch       # Bump the gem version to the next patch level 
 
 ## License
 
-Copyright (c) 2014 [Workshare ltd](http://www.workshare.com).
+Released under the MIT License.
+See the [LICENSE](LICENSE.txt) file for further details.
+
