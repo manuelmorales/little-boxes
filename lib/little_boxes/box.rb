@@ -1,9 +1,11 @@
 require 'forwarding_dsl'
-require 'logger'
 require 'mini_object'
 
 module LittleBoxes
   class Box
+    include Registry
+    extend Registry
+
     attr_accessor :build_block
     attr_accessor :parent
     attr_accessor :dependencies_block
@@ -84,44 +86,6 @@ module LittleBoxes
       end
     end
 
-    module RegisteringMethods
-      def let name, &block
-        self[name] = Box.new parent: self, &block
-      end
-
-      def dependant name, &block
-        self[name] = Box.new parent: self, dependencies_block: ->(s){s.dependencies}, &block
-      end
-
-      def custom_dependant name, &block
-        self[name] = Box.new parent: self, dependencies_block: ->(s){s.dependencies}, &block
-        customize name, &block
-      end
-
-      def customize name, &block
-        ForwardingDsl.run self[name], &block
-      end
-
-      def registry
-        @registry ||= {}
-      end
-
-      def [] name
-        registry[name] || (parent && parent[name])
-      end
-
-      def []= name, value
-        registry[name]= value
-      end
-
-      def clear
-        @registry = {}
-      end
-    end
-
-    include RegisteringMethods
-    extend RegisteringMethods
-
     def section name, &block
       s = Box.new parent: self
       s.build { s }
@@ -163,40 +127,6 @@ module LittleBoxes
 
     def _logger
       @_logger ||= NullLogger.new
-    end
-
-    class NullLogger < Logger
-      def initialize; end
-      def add(*args); end
-    end
-
-    class MissingDependency < RuntimeError; end
-
-    module Dependant
-      module ClassMethods
-        def dependency name
-          dependencies[name] = {assign_as: :block}
-          attr_injectable name
-        end
-
-        def dependencies
-          @dependencies ||= {}
-        end
-
-        def inherited klass
-          klass.dependencies.merge! dependencies
-          super
-        end
-      end
-
-      def self.included klass
-        klass.extend ClassMethods
-        klass.include MiniObject::Injectable
-      end
-
-      def dependencies
-        self.class.dependencies
-      end
     end
   end
 end

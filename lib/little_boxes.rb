@@ -1,5 +1,5 @@
-require "little_boxes/version"
-
 module LittleBoxes
-  autoload :Box, 'little_boxes/box'
+  Dir.glob(File.dirname(__FILE__) + '/little_boxes/*').each{|p| require p }
+
+  class MissingDependency < RuntimeError; end
 end

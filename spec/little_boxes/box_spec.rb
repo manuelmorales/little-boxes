@@ -51,7 +51,7 @@ describe LittleBoxes::Box do
     end
 
     subject.dependant(:server) { server_class.new }
-    expect{ subject.server }.to raise_error(LittleBoxes::Box::MissingDependency)
+    expect{ subject.server }.to raise_error(LittleBoxes::MissingDependency)
   end
 
   it 'has classes that have class dependencies' do
@@ -278,7 +278,7 @@ describe LittleBoxes::Box do
 
   it 'assigns dependencies with lambdas' do
     server_class = Class.new do
-      include LittleBoxes::Box::Dependant
+      include LittleBoxes::Dependant
 
       dependency :logger
     end
@@ -295,12 +295,12 @@ describe LittleBoxes::Box do
   describe 'Dependant' do
     it 'can be inherited' do
       class_one = Class.new do
-        include LittleBoxes::Box::Dependant
+        include LittleBoxes::Dependant
         dependency :one
       end
 
       class_two = Class.new class_one do
-        include LittleBoxes::Box::Dependant
+        include LittleBoxes::Dependant
         dependency :two
       end
 
@@ -316,4 +316,5 @@ describe LittleBoxes::Box do
   end
 
   # it 'has an always executing block'
+  # it 'uses logger if defined'
 end
