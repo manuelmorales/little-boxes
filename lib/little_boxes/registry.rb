@@ -41,6 +41,10 @@ module LittleBoxes
       self[name] = Memoized.new name: name, parent: self, &block
     end
 
+    def define name, &block
+      self[name] = Defined.new name: name, parent: self, &block
+    end
+
     def inspect
       "<#{name} box: #{registry.keys.join(" ")}>"
     end
