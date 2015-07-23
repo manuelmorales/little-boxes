@@ -4,10 +4,6 @@ require 'ostruct'
 describe LittleBoxes::Section do
   subject{ described_class.new }
 
-  it 'can build instances' do
-    expect(subject).to be_a(described_class)
-  end
-
   describe '#let' do
     it 'has freely defined registers with just a lambda' do
       subject.let(:loglevel) { 0 }
@@ -122,6 +118,69 @@ describe LittleBoxes::Section do
     end
   end
 
+  describe '#define_dependant' do
+    it 'has instances that have dependencies' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :logger
+      end
+
+      subject.let(:logger) { double('logger') }
+      subject.define_dependant(:server) { server_class.new }
+      expect(subject.server.logger).to be subject.logger
+    end
+
+    it 'unknown dependencies raise exception' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :unknown_dep
+      end
+
+      subject.define_dependant(:server) { server_class.new }
+      expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
+    end
+
+    it 'has classes that have class dependencies' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        class_dependency :host
+      end
+
+      subject.let(:host) { 'localhost' }
+      subject.define_dependant(:server_class) { server_class }
+      expect(subject.server_class.host).to eq 'localhost'
+    end
+
+    it 'supports suggestions' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :log, suggestion: ->(d){ d.logger }
+      end
+
+      subject.let(:logger) { :logger }
+
+      subject.define_dependant(:server) { server_class.new }
+
+      expect(subject.server.log).to be :logger
+    end
+
+    it 'assigns dependencies with lambdas' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+
+        dependency :logger
+      end
+
+      subject.define_dependant(:server) { server_class.new }
+
+      subject.let(:logger) { :old }
+      expect(subject.server.logger).to be :old
+
+      subject.let(:logger) { :new }
+      expect(subject.server.logger).to be :new
+    end
+  end
+
   describe '#let_custom_dependant' do
     it 'supports overriding specific attributes' do
       server_class = Class.new do
@@ -190,6 +249,16 @@ describe LittleBoxes::Section do
     end
   end
   
+  describe '#define' do
+    it 'does not memoize the result' do
+      n = 0
+      subject.define(:loglevel) { n = n + 1 }
+
+      expect(subject.loglevel).to eq 1
+      expect(subject.loglevel).to eq 2
+    end
+  end
+  
   describe '#path' do
     it 'has a path' do
       subject.section :second do
@@ -241,34 +310,17 @@ describe LittleBoxes::Section do
     end
   end
 
-  describe 'Dependant' do
-    it 'can be inherited' do
-      class_one = Class.new do
-        include LittleBoxes::Dependant
-        dependency :one
+  describe '.new' do
+    it 'executes block on initialize' do
+      subject = described_class.new do
+        let(:loglevel) { 0 }
       end
 
-      class_two = Class.new class_one do
-        include LittleBoxes::Dependant
-        dependency :two
-      end
-
-      subject.let(:one) { :one }
-      subject.let(:two) { :two }
-      subject.let_dependant(:dependant_one) { class_one.new }
-      subject.let_dependant(:dependant_two) { class_two.new }
-
-      expect(subject.dependant_one.one).to be :one
-      expect(subject.dependant_two.one).to be :one
-      expect(subject.dependant_two.two).to be :two
-    end
-  end
-
-  it 'executes block on initialize' do
-    subject = described_class.new do
-      let(:loglevel) { 0 }
+      expect(subject.loglevel).to eq 0
     end
 
-    expect(subject.loglevel).to eq 0
+    it 'can build instances' do
+      expect(subject).to be_a(described_class)
+    end
   end
 end

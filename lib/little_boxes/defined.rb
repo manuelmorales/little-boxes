@@ -1,9 +1,9 @@
 module LittleBoxes
-  class Memoized
+  class Defined
     include DependencyRegistry
 
     def get
-      @value ||= run
+      run
     end
   end
 end
