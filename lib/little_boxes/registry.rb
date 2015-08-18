@@ -1,3 +1,5 @@
+require 'forwarding_dsl'
+
 module LittleBoxes
   module Registry
     attr_accessor :parent
