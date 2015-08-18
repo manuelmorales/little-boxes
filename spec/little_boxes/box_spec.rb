@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 require 'ostruct'
 
-describe LittleBoxes::Section do
+describe LittleBoxes::Box do
   subject{ described_class.new }
 
   describe '#let' do
@@ -200,9 +200,9 @@ describe LittleBoxes::Section do
     end
   end
 
-  describe '#section' do
-    it 'supports sections' do
-      subject.section :loggers do
+  describe '#box' do
+    it 'supports boxes' do
+      subject.box :loggers do
         let(:null) { :null_logger }
         let(:file) { :file_logger }
       end
@@ -218,14 +218,14 @@ describe LittleBoxes::Section do
 
       subject.let(:logger) { :logger }
 
-      subject.section :servers do
+      subject.box :servers do
         let_dependant(:one) { server_class.new }
       end
 
       expect(subject.servers.one.logger).to be :logger
     end
 
-    it 'suggestions within sections' do
+    it 'suggestions within boxes' do
       server_class = Class.new do
         include LittleBoxes::Dependant
         dependency :log, suggestion: ->(a){ a.logger }
@@ -233,7 +233,7 @@ describe LittleBoxes::Section do
 
       subject.let(:logger) { :logger }
 
-      subject.section :servers do
+      subject.box :servers do
         let_dependant(:apache) { server_class.new }
       end
 
@@ -245,7 +245,7 @@ describe LittleBoxes::Section do
     it 'has nice inspect' do
       subject.let(:loglevel) { 0 }
       subject.let(:logger) { 0 }
-      expect(subject.inspect).to eq "<LittleBoxes::Section box: loglevel logger>"
+      expect(subject.inspect).to eq "<LittleBoxes::Box box: loglevel logger>"
     end
   end
   
@@ -261,8 +261,8 @@ describe LittleBoxes::Section do
   
   describe '#path' do
     it 'has a path' do
-      subject.section :second do
-        section :third do
+      subject.box :second do
+        box :third do
         end
       end
 
@@ -271,11 +271,11 @@ describe LittleBoxes::Section do
   end
 
   describe '#name' do
-    it 'names sections' do
+    it 'names boxes' do
       subject.name = :first
 
-      subject.section :second do
-        section :third do
+      subject.box :second do
+        box :third do
         end
       end
 
@@ -287,7 +287,7 @@ describe LittleBoxes::Section do
     it 'has a reset' do
       first = subject
 
-      first.section :second do
+      first.box :second do
         let(:logger) { Object.new }
       end
 
@@ -302,8 +302,8 @@ describe LittleBoxes::Section do
     it 'has a root' do
       first = subject
 
-      first.section :second do
-        section(:third) { }
+      first.box :second do
+        box(:third) { }
       end
 
       expect(first.second.third.root).to eq first

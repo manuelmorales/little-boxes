@@ -1,5 +1,5 @@
 module LittleBoxes
-  class Section
+  class Box
     include Registry
 
     def get
@@ -24,7 +24,7 @@ module LittleBoxes
       end
     end
 
-    def section name, &block
+    def box name, &block
       s = self.class.new parent: self, name: name
       self[name] = s
       ForwardingDsl.run s, &block

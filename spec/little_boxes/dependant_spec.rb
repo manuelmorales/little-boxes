@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe LittleBoxes::Dependant do
-  let(:section) { LittleBoxes::Section.new }
+  let(:box) { LittleBoxes::Box.new }
 
   describe 'Dependant' do
     it 'can be inherited' do
@@ -15,14 +15,14 @@ describe LittleBoxes::Dependant do
         dependency :two
       end
 
-      section.let(:one) { :one }
-      section.let(:two) { :two }
-      section.let_dependant(:dependant_one) { class_one.new }
-      section.let_dependant(:dependant_two) { class_two.new }
+      box.let(:one) { :one }
+      box.let(:two) { :two }
+      box.let_dependant(:dependant_one) { class_one.new }
+      box.let_dependant(:dependant_two) { class_two.new }
 
-      expect(section.dependant_one.one).to be :one
-      expect(section.dependant_two.one).to be :one
-      expect(section.dependant_two.two).to be :two
+      expect(box.dependant_one.one).to be :one
+      expect(box.dependant_two.one).to be :one
+      expect(box.dependant_two.two).to be :two
     end
   end
 end
