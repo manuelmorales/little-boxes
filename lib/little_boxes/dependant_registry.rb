@@ -32,9 +32,11 @@ module LittleBoxes
 
     private
     def run
-      ForwardingDsl.run(parent, &build_block).tap do |subject|
-        subject.dependencies.each do |name, options|
-          subject.send("#{name}"){ get_dependency(name, options) }
+      ForwardingDsl.run(self, &build_block).tap do |subject|
+        if subject.respond_to? :dependencies
+          subject.dependencies.each do |name, options|
+            subject.send("#{name}"){ get_dependency(name, options) }
+          end
         end
       end
     end

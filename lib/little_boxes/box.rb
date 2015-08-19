@@ -10,20 +10,6 @@ module LittleBoxes
       ForwardingDsl.run self[name], &block
     end
 
-    def let_dependant name, &block
-      self[name] = MemoizedDependant.new name: name, parent: self, &block
-    end
-
-    def define_dependant name, &block
-      self[name] = DefinedDependant.new name: name, parent: self, &block
-    end
-
-    def let_custom_dependant name, &block
-      self[name] = MemoizedDependant.new(name: name, parent: self).tap do |d|
-        ForwardingDsl.run d, &block
-      end
-    end
-
     def box name, &block
       s = self.class.new parent: self, name: name
       self[name] = s

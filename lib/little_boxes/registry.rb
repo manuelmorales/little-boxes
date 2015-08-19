@@ -40,11 +40,11 @@ module LittleBoxes
     end
 
     def let name, &block
-      self[name] = Memoized.new name: name, parent: self, &block
+      self[name] = MemoizedDependant.new name: name, parent: self, &block
     end
 
     def define name, &block
-      self[name] = Defined.new name: name, parent: self, &block
+      self[name] = DefinedDependant.new name: name, parent: self, &block
     end
 
     def inspect

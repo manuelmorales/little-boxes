@@ -17,8 +17,8 @@ describe LittleBoxes::Dependant do
 
       box.let(:one) { :one }
       box.let(:two) { :two }
-      box.let_dependant(:dependant_one) { class_one.new }
-      box.let_dependant(:dependant_two) { class_two.new }
+      box.let(:dependant_one) { class_one.new }
+      box.let(:dependant_two) { class_two.new }
 
       expect(box.dependant_one.one).to be :one
       expect(box.dependant_two.one).to be :one

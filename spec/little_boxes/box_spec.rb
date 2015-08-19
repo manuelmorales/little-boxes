@@ -4,6 +4,36 @@ require 'ostruct'
 describe LittleBoxes::Box do
   subject{ described_class.new }
 
+  describe '#customize' do
+    it 'allows customizing dependencies' do
+      subject.let(:loglevel) { 0 }
+      subject.let(:logger) { double('logger', loglevel: loglevel) }
+
+      subject.customize(:logger) do |l|
+        l.let(:loglevel) { 1 }
+      end
+
+      expect(subject.logger.loglevel).to eq 1
+    end
+
+    it 'supports overriding lets attributes from the outside' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :logger
+      end
+
+      subject.let(:logger) { :logger }
+
+      subject.let(:server) { server_class.new }
+
+      subject.customize(:server) do
+        let(:logger) { :new_logger }
+      end
+
+      expect(subject.server.logger).to be :new_logger
+    end
+  end
+
   describe '#let' do
     it 'has freely defined registers with just a lambda' do
       subject.let(:loglevel) { 0 }
@@ -23,39 +53,7 @@ describe LittleBoxes::Box do
       subject.let(:logger) { double('logger', loglevel: loglevel) }
       expect(subject.logger.loglevel).to eq 0
     end
-  end
 
-  describe '#customize' do
-    it 'allows customizing dependencies' do
-      subject.let(:loglevel) { 0 }
-      subject.let(:logger) { double('logger', loglevel: loglevel) }
-
-      subject.customize(:logger) do |l|
-        l.let(:loglevel) { 1 }
-      end
-
-      expect(subject.logger.loglevel).to eq 1
-    end
-
-    it 'supports overriding let_dependants attributes from the outside' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.let_dependant(:server) { server_class.new }
-
-      subject.customize(:server) do
-        let(:logger) { :new_logger }
-      end
-
-      expect(subject.server.logger).to be :new_logger
-    end
-  end
-
-  describe '#let_dependant' do
     it 'has instances that have dependencies' do
       server_class = Class.new do
         include LittleBoxes::Dependant
@@ -63,7 +61,7 @@ describe LittleBoxes::Box do
       end
 
       subject.let(:logger) { double('logger') }
-      subject.let_dependant(:server) { server_class.new }
+      subject.let(:server) { server_class.new }
       expect(subject.server.logger).to be subject.logger
     end
 
@@ -73,7 +71,7 @@ describe LittleBoxes::Box do
         dependency :unknown_dep
       end
 
-      subject.let_dependant(:server) { server_class.new }
+      subject.let(:server) { server_class.new }
       expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
     end
 
@@ -84,7 +82,7 @@ describe LittleBoxes::Box do
       end
 
       subject.let(:host) { 'localhost' }
-      subject.let_dependant(:server_class) { server_class }
+      subject.let(:server_class) { server_class }
       expect(subject.server_class.host).to eq 'localhost'
     end
 
@@ -96,7 +94,7 @@ describe LittleBoxes::Box do
 
       subject.let(:logger) { :logger }
 
-      subject.let_dependant(:server) { server_class.new }
+      subject.let(:server) { server_class.new }
 
       expect(subject.server.log).to be :logger
     end
@@ -108,7 +106,7 @@ describe LittleBoxes::Box do
         dependency :logger
       end
 
-      subject.let_dependant(:server) { server_class.new }
+      subject.let(:server) { server_class.new }
 
       subject.let(:logger) { :old }
       expect(subject.server.logger).to be :old
@@ -116,72 +114,7 @@ describe LittleBoxes::Box do
       subject.let(:logger) { :new }
       expect(subject.server.logger).to be :new
     end
-  end
 
-  describe '#define_dependant' do
-    it 'has instances that have dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { double('logger') }
-      subject.define_dependant(:server) { server_class.new }
-      expect(subject.server.logger).to be subject.logger
-    end
-
-    it 'unknown dependencies raise exception' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :unknown_dep
-      end
-
-      subject.define_dependant(:server) { server_class.new }
-      expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
-    end
-
-    it 'has classes that have class dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        class_dependency :host
-      end
-
-      subject.let(:host) { 'localhost' }
-      subject.define_dependant(:server_class) { server_class }
-      expect(subject.server_class.host).to eq 'localhost'
-    end
-
-    it 'supports suggestions' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :log, suggestion: ->(d){ d.logger }
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.define_dependant(:server) { server_class.new }
-
-      expect(subject.server.log).to be :logger
-    end
-
-    it 'assigns dependencies with lambdas' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-
-        dependency :logger
-      end
-
-      subject.define_dependant(:server) { server_class.new }
-
-      subject.let(:logger) { :old }
-      expect(subject.server.logger).to be :old
-
-      subject.let(:logger) { :new }
-      expect(subject.server.logger).to be :new
-    end
-  end
-
-  describe '#let_custom_dependant' do
     it 'supports overriding specific attributes' do
       server_class = Class.new do
         include LittleBoxes::Dependant
@@ -191,12 +124,83 @@ describe LittleBoxes::Box do
       subject.let(:logger) { :logger }
       subject.let(:new_logger) { :new_logger }
 
-      subject.let_custom_dependant(:server) do
+      subject.let(:server) do
         build { server_class.new }
-        let(:logger) { :new_logger }
+        let(:logger) { new_logger }
       end
 
       expect(subject.server.logger).to be :new_logger
+    end
+  end
+
+  describe '#define' do
+    it 'does not memoize the result' do
+      n = 0
+      subject.define(:loglevel) { n = n + 1 }
+
+      expect(subject.loglevel).to eq 1
+      expect(subject.loglevel).to eq 2
+    end
+
+    it 'has instances that have dependencies' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :logger
+      end
+
+      subject.let(:logger) { double('logger') }
+      subject.define(:server) { server_class.new }
+      expect(subject.server.logger).to be subject.logger
+    end
+
+    it 'unknown dependencies raise exception' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :unknown_dep
+      end
+
+      subject.define(:server) { server_class.new }
+      expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
+    end
+
+    it 'has classes that have class dependencies' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        class_dependency :host
+      end
+
+      subject.let(:host) { 'localhost' }
+      subject.define(:server_class) { server_class }
+      expect(subject.server_class.host).to eq 'localhost'
+    end
+
+    it 'supports suggestions' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :log, suggestion: ->(d){ d.logger }
+      end
+
+      subject.let(:logger) { :logger }
+
+      subject.define(:server) { server_class.new }
+
+      expect(subject.server.log).to be :logger
+    end
+
+    it 'assigns dependencies with lambdas' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+
+        dependency :logger
+      end
+
+      subject.define(:server) { server_class.new }
+
+      subject.let(:logger) { :old }
+      expect(subject.server.logger).to be :old
+
+      subject.let(:logger) { :new }
+      expect(subject.server.logger).to be :new
     end
   end
 
@@ -219,7 +223,7 @@ describe LittleBoxes::Box do
       subject.let(:logger) { :logger }
 
       subject.box :servers do
-        let_dependant(:one) { server_class.new }
+        let(:one) { server_class.new }
       end
 
       expect(subject.servers.one.logger).to be :logger
@@ -234,7 +238,7 @@ describe LittleBoxes::Box do
       subject.let(:logger) { :logger }
 
       subject.box :servers do
-        let_dependant(:apache) { server_class.new }
+        let(:apache) { server_class.new }
       end
 
       expect(subject.servers.apache.log).to be :logger
@@ -246,16 +250,6 @@ describe LittleBoxes::Box do
       subject.let(:loglevel) { 0 }
       subject.let(:logger) { 0 }
       expect(subject.inspect).to eq "<LittleBoxes::Box box: loglevel logger>"
-    end
-  end
-  
-  describe '#define' do
-    it 'does not memoize the result' do
-      n = 0
-      subject.define(:loglevel) { n = n + 1 }
-
-      expect(subject.loglevel).to eq 1
-      expect(subject.loglevel).to eq 2
     end
   end
   
