@@ -25,7 +25,7 @@ module LittleBoxes
       options ||= {}
 
       if d = self[name]; d.get
-      elsif s = options[:suggestion]; s.call parent
+      elsif s = options[:default]; s.call parent
       else raise(MissingDependency.new "Could not find #{name}")
       end
     end

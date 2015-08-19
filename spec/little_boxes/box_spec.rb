@@ -86,10 +86,10 @@ describe LittleBoxes::Box do
       expect(subject.server_class.host).to eq 'localhost'
     end
 
-    it 'supports suggestions' do
+    it 'supports defaults' do
       server_class = Class.new do
         include LittleBoxes::Dependant
-        dependency :log, suggestion: ->(d){ d.logger }
+        dependency :log, default: ->(d){ d.logger }
       end
 
       subject.let(:logger) { :logger }
@@ -174,10 +174,10 @@ describe LittleBoxes::Box do
       expect(subject.server_class.host).to eq 'localhost'
     end
 
-    it 'supports suggestions' do
+    it 'supports defaults' do
       server_class = Class.new do
         include LittleBoxes::Dependant
-        dependency :log, suggestion: ->(d){ d.logger }
+        dependency :log, default: ->(d){ d.logger }
       end
 
       subject.let(:logger) { :logger }
@@ -229,10 +229,10 @@ describe LittleBoxes::Box do
       expect(subject.servers.one.logger).to be :logger
     end
 
-    it 'suggestions within boxes' do
+    it 'defaults within boxes' do
       server_class = Class.new do
         include LittleBoxes::Dependant
-        dependency :log, suggestion: ->(a){ a.logger }
+        dependency :log, default: ->(a){ a.logger }
       end
 
       subject.let(:logger) { :logger }
