@@ -47,6 +47,10 @@ module LittleBoxes
       self[name] = DefinedDependant.new name: name, parent: self, &block
     end
 
+    def obtain name, &block
+      self[name] = Obtained.new name: name, parent: self, &block
+    end
+
     def inspect
       "<#{name} box: #{registry.keys.join(" ")}>"
     end

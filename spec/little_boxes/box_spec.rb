@@ -133,6 +133,27 @@ describe LittleBoxes::Box do
     end
   end
 
+  describe '#obtain' do
+    it 'does not memoize the result' do
+      n = 0
+      subject.obtain(:loglevel) { n = n + 1 }
+
+      expect(subject.loglevel).to eq 1
+      expect(subject.loglevel).to eq 2
+    end
+
+    it 'doesn not inject anything' do
+      server_class = Class.new do
+        include LittleBoxes::Dependant
+        dependency :logger
+      end
+
+      subject.let(:logger) { double('logger') }
+      subject.obtain(:server) { server_class.new.tap { |s| s.logger = :old_logger } }
+      expect(subject.server.logger).to be :old_logger
+    end
+  end
+
   describe '#define' do
     it 'does not memoize the result' do
       n = 0
