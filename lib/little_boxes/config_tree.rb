@@ -1,5 +1,5 @@
 module LittleBoxes
-  class Config
+  class ConfigurableTree
     def initialize(name = nil, options = {}, &block)
       @name = name
       @registry = {}
