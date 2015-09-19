@@ -36,4 +36,6 @@ RSpec.describe LittleBoxes::Configurable do
     expect(subject.config.inspect)
       .to match %r{#<Server::Config:0x[0-f]+ port/=>}
   end
+
+  it 'has class config'
 end
