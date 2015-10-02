@@ -9,7 +9,7 @@ RSpec.describe LittleBoxes::Configurable do
   end
 
   it 'allows passing the config in the initializer' do
-    subject = Server.new(double(:config, port: 80))
+    subject = Server.new(port: 80)
     expect(subject.send(:port)).to eq 80
   end
 

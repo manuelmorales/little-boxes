@@ -32,6 +32,45 @@ RSpec.describe LittleBoxes::ConfigurableTree do
     end
   end
 
+  describe '#get_configured' do
+    before do
+      server_class = Class.new do
+        include LittleBoxes::Configurable
+        configurable :port
+        public :port
+      end
+
+      stub_const('Server', server_class)
+
+      subject.get(:port) { 80 }
+    end
+
+    it 'defines a method' do
+      subject.get_configured(:server) { Server.new }
+      expect(subject.server).to be_a Server
+    end
+
+    it 'builds a new instance each time' do
+      subject.get_configured(:server) { Server.new }
+      expect(subject.server).not_to be subject.server
+    end
+
+    it 'configures the object' do
+      subject.get(:port) { 80 }
+      subject.get_configured(:server) { Server.new }
+
+      expect(subject.server.port).to eq 80
+    end
+
+    it 'supports overriding options' do
+      pending
+      subject.get(:port) { 80 }
+      subject.get_configured(:server) { |c| Server.new port: c.port }
+
+      expect(subject.server.port).to eq 80
+    end
+  end
+
   describe '#let' do
     it 'defines a method' do
       subject.let(:server) { Server.new }

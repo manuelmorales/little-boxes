@@ -11,6 +11,16 @@ module LittleBoxes
       registry[name] = self.class.new name, parent: self, &block
     end
 
+    def get_configured(name, &block)
+      get(name) do |tree|
+        block.call(tree).tap do |obj|
+          obj.configure do |cfg|
+            cfg.port = tree.port
+          end
+        end
+      end
+    end
+
     def let(name, &block)
       value = nil
       b = ->(c) { value ||= block.call c }

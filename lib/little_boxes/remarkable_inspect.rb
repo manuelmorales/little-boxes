@@ -4,6 +4,12 @@ module LittleBoxes
       RemarkableInspect.for self
     end
 
+    def remarkable_methods
+      methods(false) + 
+        self.class.instance_methods(false) - 
+        [:inspect, :remarkable_methods]
+    end
+
     class << self
       def for(obj)
         "#<#{obj.class}:0x#{hex_id_for obj} #{methods_list_for(obj)}>"
@@ -11,12 +17,6 @@ module LittleBoxes
 
       def hex_id_for(obj)
         '%x' % (obj.object_id << 1)
-      end
-
-      def remarkable_methods_for(obj)
-        obj.methods(false) +
-          obj.class.instance_methods(false) -
-          [:inspect]
       end
 
       # Substittues [my_method, my_method=] by [my_method/=]
@@ -34,7 +34,7 @@ module LittleBoxes
       end
 
       def methods_list_for(obj)
-        compact_getsetters(remarkable_methods_for(obj)).join(", ")
+        compact_getsetters(obj.remarkable_methods).join(", ")
       end
     end
   end

@@ -22,7 +22,20 @@ module LittleBoxes
 
     def self.included(klass)
       klass.extend ClassMethods
-      klass.const_set :Config, Class.new { include RemarkableInspect }
+
+      klass.const_set :Config, Class.new
+
+      klass::Config.class_eval do
+        include RemarkableInspect
+
+        def [](key)
+          public_send key
+        end
+
+        def remarkable_methods
+          super - [:[]]
+        end
+      end
     end
 
     module ClassMethods
@@ -30,7 +43,7 @@ module LittleBoxes
         self::Config.send :attr_accessor, name
 
         define_method name do
-          config.public_send(name)
+          config[name]
         end
 
         private name
