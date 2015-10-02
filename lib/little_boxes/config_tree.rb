@@ -15,7 +15,9 @@ module LittleBoxes
       get(name) do |tree|
         block.call(tree).tap do |obj|
           obj.configure do |cfg|
-            cfg.port = tree.port
+            cfg.keys.each do |k|
+              cfg[k] = tree.public_send k
+            end
           end
         end
       end

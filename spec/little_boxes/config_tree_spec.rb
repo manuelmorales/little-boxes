@@ -63,11 +63,11 @@ RSpec.describe LittleBoxes::ConfigurableTree do
     end
 
     it 'supports overriding options' do
-      pending
+      pending 'This is currently misleading'
       subject.get(:port) { 80 }
-      subject.get_configured(:server) { |c| Server.new port: c.port }
+      subject.get_configured(:server) { |c| Server.new port: 81 }
 
-      expect(subject.server.port).to eq 80
+      expect(subject.server.port).to eq 81
     end
   end
 
@@ -116,7 +116,7 @@ RSpec.describe LittleBoxes::ConfigurableTree do
     end
   end
 
-  describe 'custom' do
+  describe 'customize' do
     it 'allows overriding values defined with get' do
       subject.get(:port) { 80 }
       subject.get(:server) { |c| Server.new port: c.port }

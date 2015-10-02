@@ -32,10 +32,24 @@ RSpec.describe LittleBoxes::Configurable do
     expect(subject.inspect).to match %r{#<Server:0x[0-f]+ start, stop>}
   end
 
-  it 'has a nice config inspect' do
-    expect(subject.config.inspect)
-      .to match %r{#<Server::Config:0x[0-f]+ port/=>}
+  it 'allows iterating through the dependencies' do
+    subject.configure { |c| c.port = 80 }
+    expect(subject.config.keys).to eq [:port]
   end
 
-  it 'has class config'
+  it 'allows setting keys as a hash' do
+    subject.config[:port] = 80
+    expect(subject.config[:port]).to eq 80
+  end
+
+  it 'has a nice config inspect' do
+    expect(subject.config.inspect)
+      .to match %r{#<Server::Config:0x[0-f]+ port>}
+  end
+
+  it 'has class config' do
+    Server.class_eval { class_configurable :default_port }
+    Server.config.default_port = 80
+    expect(Server.config.default_port).to eq 80
+  end
 end
