@@ -52,4 +52,16 @@ RSpec.describe LittleBoxes::Configurable do
     Server.config.default_port = 80
     expect(Server.config.default_port).to eq 80
   end
+
+  it 'exposes class keys as private methods' do
+    Server.class_eval { class_configurable :default_port }
+    Server.config.default_port = 80
+    expect(Server.send :default_port).to eq 80
+  end
+
+  it 'exposes keys as private methods' do
+    Server.class_eval { configurable :port }
+    subject.config.port = 80
+    expect(subject.send :port).to eq 80
+  end
 end

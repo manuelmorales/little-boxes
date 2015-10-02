@@ -22,76 +22,11 @@ module LittleBoxes
 
     def self.included(klass)
       klass.extend ClassMethods
-
-      klass.const_set :Config, Class.new
-
-      klass::Config.class_eval do
-        include RemarkableInspect
-
-        def [](key)
-          public_send key
-        end
-
-        def []=(key, value)
-          public_send "#{key}=", value
-        end
-
-        def remarkable_methods
-          keys
-        end
-
-        def keys
-          self.class.keys
-        end
-
-        class << self
-          def keys
-            @keys ||= []
-          end
-        end
-      end
-
-      klass.const_set :ClassConfig, Class.new
-
-      klass::ClassConfig.class_eval do
-        include RemarkableInspect
-
-        def [](key)
-          public_send key
-        end
-
-        def []=(key, value)
-          public_send "#{key}=", value
-        end
-
-        def remarkable_methods
-          keys
-        end
-
-        def keys
-          self.class.keys
-        end
-
-        class << self
-          def keys
-            @keys ||= []
-          end
-        end
-      end
+      klass.const_set :Config, Class.new(ConfigBase)
+      klass.const_set :ClassConfig, Class.new(ConfigBase)
     end
 
     module ClassMethods
-      def configurable(name)
-        self::Config.send :attr_accessor, name
-        self::Config.keys << name.to_sym
-
-        define_method name do
-          config[name]
-        end
-
-        private name
-      end
-      
       def configure
         yield config
       end
@@ -100,9 +35,28 @@ module LittleBoxes
         @config ||= self::ClassConfig.new
       end
 
+      private
+
       def class_configurable(name)
         self::ClassConfig.send :attr_accessor, name
         self::ClassConfig.keys << name.to_sym
+
+        define_singleton_method name do
+          config[name]
+        end
+
+        private_class_method name
+
+        define_method name do
+          self.class.config[name]
+        end
+
+        private name
+      end
+
+      def configurable(name)
+        self::Config.send :attr_accessor, name
+        self::Config.keys << name.to_sym
 
         define_method name do
           config[name]
