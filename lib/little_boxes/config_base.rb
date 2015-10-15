@@ -20,6 +20,14 @@ module LittleBoxes
       self.class.keys
     end
 
+    def from(other)
+      keys.each do |k|
+        public_send k do
+          other.public_send k
+        end
+      end
+    end
+
     private
 
     def procs

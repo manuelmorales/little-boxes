@@ -13,7 +13,7 @@ module LittleBoxes
     end
 
     def configure
-      yield config
+      yield config if block_given?
       self
     end
 

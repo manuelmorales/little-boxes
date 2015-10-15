@@ -82,13 +82,7 @@ module LittleBoxes
 
     def configure(tree, &block)
       block.call(tree).tap do |obj|
-        obj.configure do |cfg|
-          cfg.keys.each do |k|
-            cfg.public_send k do
-              tree.public_send k
-            end
-          end
-        end
+        obj.config.from tree
       end
     end
   end
