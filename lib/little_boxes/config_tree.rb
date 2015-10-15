@@ -41,6 +41,10 @@ module LittleBoxes
       end
     end
 
+    alias letc let_configured
+    alias getc get_configured
+    alias letc! let_configured!
+
     def section(name, &block)
       sub_config = self.class.new(name, parent: self)
       yield sub_config if block_given?
