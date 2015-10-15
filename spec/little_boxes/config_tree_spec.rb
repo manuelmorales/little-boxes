@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-RSpec.describe LittleBoxes::ConfigurableTree do
+RSpec.describe LittleBoxes::ConfigTree do
   before do
     server_class = Class.new do
       attr_accessor :port
