@@ -13,13 +13,7 @@ module LittleBoxes
 
     def get_configured(name, &block)
       get(name) do |tree|
-        block.call(tree).tap do |obj|
-          obj.configure do |cfg|
-            cfg.keys.each do |k|
-              cfg[k] = tree.public_send k
-            end
-          end
-        end
+        configure(tree, &block)
       end
     end
 
@@ -27,6 +21,12 @@ module LittleBoxes
       value = nil
       b = ->(c) { value ||= block.call c }
       registry[name] = get name, &b
+    end
+
+    def let_configured(name, &block)
+      let(name) do |tree|
+        configure(tree, &block)
+      end
     end
 
     def section(name, &block)
@@ -78,6 +78,16 @@ module LittleBoxes
 
     def keys_list
       registry.keys.join(', ')
+    end
+
+    def configure(tree, &block)
+      block.call(tree).tap do |obj|
+        obj.configure do |cfg|
+          cfg.keys.each do |k|
+            cfg[k] = tree.public_send k
+          end
+        end
+      end
     end
   end
 end

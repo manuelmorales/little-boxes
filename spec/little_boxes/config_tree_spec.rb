@@ -90,6 +90,37 @@ RSpec.describe LittleBoxes::ConfigTree do
     end
   end
 
+  describe 'let_configured' do
+    before do
+      server_class = Class.new do
+        include LittleBoxes::Configurable
+        configurable :port
+        public :port
+      end
+
+      stub_const('Server', server_class)
+
+      subject.get(:port) { 80 }
+    end
+
+    it 'defines a method' do
+      subject.let_configured(:server) { Server.new }
+      expect(subject.server).to be_a Server
+    end
+
+    it 'memoizes the response' do
+      subject.let_configured(:server) { Server.new }
+      expect(subject.server).to be subject.server
+    end
+
+    it 'configures the object' do
+      subject.get(:port) { 80 }
+      subject.let_configured(:server) { Server.new }
+
+      expect(subject.server.port).to eq 80
+    end
+  end
+
   describe 'inspect' do
     it 'is pretty' do
       subject = described_class.new :app
