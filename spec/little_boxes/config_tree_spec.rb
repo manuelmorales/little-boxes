@@ -87,12 +87,38 @@ RSpec.describe LittleBoxes::ConfigTree do
     end
   end
 
+
+  shared_examples_for 'ConfigTree customization' do
+    it 'allows overriding values defined with' do
+      subject.get(:port) { 80 }
+      subject.public_send(method_name, :server) { |c| Server.new port: c.port }
+      subject.customize(:server) { |c| c.get(:port) { 443 } }
+
+      expect(subject.server.port).to eq 443
+      expect(subject.port).to eq 80
+    end
+
+    it 'allows customizing inline' do
+      subject.get(:port) { 80 }
+
+      subject.public_send(method_name, :server) do |c|
+        Server.new port: c.port 
+      end.customize do |c|
+        c.get(:port) { 443 }
+      end
+
+      expect(subject.server.port).to eq 443
+      expect(subject.port).to eq 80
+    end
+  end
+
   describe '#get' do
     let(:method_name) { :get }
     before { stub_const('Server', plain_server_class) }
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree NO memoization'
+    it_behaves_like 'ConfigTree customization'
   end
 
   describe '#get_configured' do
@@ -102,6 +128,7 @@ RSpec.describe LittleBoxes::ConfigTree do
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree configuration'
     it_behaves_like 'ConfigTree NO memoization'
+    it_behaves_like 'ConfigTree customization'
   end
 
   describe '#let' do
@@ -110,6 +137,7 @@ RSpec.describe LittleBoxes::ConfigTree do
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree memoization'
+    it_behaves_like 'ConfigTree customization'
   end
 
   describe '#let!' do
@@ -128,6 +156,7 @@ RSpec.describe LittleBoxes::ConfigTree do
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree memoization'
     it_behaves_like 'ConfigTree configuration'
+    it_behaves_like 'ConfigTree customization'
   end
 
   describe '#let_configured!' do
@@ -165,38 +194,6 @@ RSpec.describe LittleBoxes::ConfigTree do
       subject.get(:logger) { :a_logger }
       subject.section(:servers)
       expect(subject.servers.logger).to be :a_logger
-    end
-  end
-
-  describe 'customize' do
-    before { stub_const('Server', plain_server_class) }
-
-    it 'allows overriding values defined with get' do
-      subject.get(:port) { 80 }
-      subject.get(:server) { |c| Server.new port: c.port }
-      subject.customize(:server) { |c| c.get(:port) { 443 } }
-
-      expect(subject.server.port).to eq 443
-      expect(subject.port).to eq 80
-    end
-
-    it 'allows overriding values defined with let' do
-      subject.let(:port) { 80 }
-      subject.let(:server) { |c| Server.new port: c.port }
-      subject.customize(:server) { |c| c.let(:port) { 443 } }
-
-      expect(subject.server.port).to eq 443
-      expect(subject.port).to eq 80
-    end
-
-    it 'allows customizing inline' do
-      subject.get(:port) { 80 }
-      subject.get(:server) { |c| Server.new port: c.port }.customize do |c|
-        c.get(:port) { 443 }
-      end
-
-      expect(subject.server.port).to eq 443
-      expect(subject.port).to eq 80
     end
   end
 end
