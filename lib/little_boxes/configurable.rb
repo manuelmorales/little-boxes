@@ -22,7 +22,7 @@ module LittleBoxes
     end
 
     def initialize_copy(source)
-      reset
+      copy_config_from source
     end
 
     private
@@ -33,8 +33,8 @@ module LittleBoxes
       klass.const_set :ClassConfig, Class.new(ConfigBase)
     end
 
-    def reset
-      @config = nil
+    def copy_config_from source
+      @config = source.config.dup
     end
 
     module ClassMethods

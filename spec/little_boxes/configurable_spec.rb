@@ -52,14 +52,22 @@ RSpec.describe LittleBoxes::Configurable do
       .to match %r{#<Server::Config:0x[0-f]+ port>}
     end
 
-    it 'clears the config on dup' do
-      other = subject.dup
-      expect(subject.config).not_to be other.config
-    end
+    describe 'dup and clone' do
+      it 'separates the config on dup' do
+        other = subject.dup
+        expect(subject.config).not_to be other.config
+      end
 
-    it 'clears the config on clone' do
-      other = subject.clone
-      expect(subject.config).not_to be other.config
+      it 'separates the config on clone' do
+        other = subject.clone
+        expect(subject.config).not_to be other.config
+      end
+
+      it 'copies the config on dup' do
+        subject.config[:port] = 99
+        other = subject.dup
+        expect(other.config.port).to eq 99
+      end
     end
   end
 
