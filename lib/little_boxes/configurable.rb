@@ -50,8 +50,7 @@ module LittleBoxes
       private
 
       def class_configurable(name)
-        self::ClassConfig.send :attr_accessor, name
-        self::ClassConfig.keys << name.to_sym
+        self::ClassConfig.send :attr, name
 
         define_singleton_method name do
           config[name]

@@ -82,27 +82,37 @@ RSpec.describe LittleBoxes::Configurable do
   end
 
   describe 'class' do
+    subject do
+      Server.class_eval do
+        class_configurable :port
+      end
+    end
+
     it 'has class config' do
-      Server.class_eval { class_configurable :default_port }
-      Server.config.default_port = 80
-      expect(Server.config.default_port).to eq 80
+      subject.config.port = 80
+      expect(subject.config.port).to eq 80
     end
 
     it 'exposes class keys as private methods' do
-      Server.class_eval { class_configurable :default_port }
-      Server.config.default_port = 80
-      expect(Server.send :default_port).to eq 80
+      subject.config.port = 80
+      expect(subject.send :port).to eq 80
     end
 
     it 'exposes keys as private methods' do
-      Server.class_eval { configurable :port }
+      subject.class_eval { class_configurable :port }
       subject.config.port = 80
       expect(subject.send :port).to eq 80
     end
 
     it 'returns the class after configuring' do
-      obj = Server.configure { }
-      expect(obj).to be Server
+      obj = subject.configure { }
+      expect(obj).to be subject
+    end
+
+    it 'allows configuring with lambdas' do
+      subject.class_eval { class_configurable :port }
+      subject.config.port { 80 }
+      expect(subject.config.port).to eq 80
     end
   end
 end
