@@ -6,12 +6,15 @@ module LittleBoxes
 
     attr_reader :config
 
-    def initialize(config = nil)
-      @config = config
+    def initialize(options = {})
+      config.keys.each do |k|
+        config[k] = options[k]
+      end
     end
 
     def configure
       yield config
+      self
     end
 
     def config
@@ -29,6 +32,7 @@ module LittleBoxes
     module ClassMethods
       def configure
         yield config
+        self
       end
 
       def config

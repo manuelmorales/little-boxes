@@ -18,6 +18,11 @@ RSpec.describe LittleBoxes::Configurable do
     expect(subject.send(:port)).to eq 80
   end
 
+  it 'returns the object after configuring' do
+    obj = subject.configure { |c| c.port = 80 }
+    expect(obj).to be subject
+  end
+
   it 'fails if the wrong config name is used' do
     expect{ subject.configure { |c| c.whatever = :anything } }
       .to raise_error(NoMethodError)
@@ -62,5 +67,10 @@ RSpec.describe LittleBoxes::Configurable do
     Server.class_eval { configurable :port }
     subject.config.port = 80
     expect(subject.send :port).to eq 80
+  end
+
+  it 'returns the class after configuring' do
+    obj = Server.configure { }
+    expect(obj).to be Server
   end
 end
