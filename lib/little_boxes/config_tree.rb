@@ -84,7 +84,9 @@ module LittleBoxes
       block.call(tree).tap do |obj|
         obj.configure do |cfg|
           cfg.keys.each do |k|
-            cfg[k] = tree.public_send k
+            cfg.public_send k do
+              tree.public_send k
+            end
           end
         end
       end

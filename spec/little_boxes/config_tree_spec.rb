@@ -63,11 +63,20 @@ RSpec.describe LittleBoxes::ConfigTree do
     end
 
     it 'supports overriding options' do
-      pending 'This is currently misleading'
       subject.get(:port) { 80 }
       subject.get_configured(:server) { |c| Server.new port: 81 }
 
       expect(subject.server.port).to eq 81
+    end
+
+    it 'doesn\'t resolve the dependency at injection time' do
+      target = double(:target, port: 1)
+
+      expect(target).not_to receive(:port)
+
+      subject.get(:port) { target.port }
+      subject.get_configured(:server) { |c| Server.new }
+      subject.server
     end
   end
 

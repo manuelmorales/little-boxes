@@ -67,8 +67,7 @@ module LittleBoxes
       end
 
       def configurable(name)
-        self::Config.send :attr_accessor, name
-        self::Config.keys << name.to_sym
+        self::Config.send :attr, name
 
         define_method name do
           config[name]

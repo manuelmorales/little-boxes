@@ -19,6 +19,16 @@ RSpec.describe LittleBoxes::Configurable do
       expect(subject.send(:port)).to eq 80
     end
 
+    it 'allows configuring with lambdas' do
+      subject.configure { |c| c.port { 80 } }
+      expect(subject.send(:port)).to eq 80
+    end
+
+    it 'allows configuring with lambdas memoized' do
+      subject.configure { |c| c.port { Object.new } }
+      expect(subject.send(:port)).to be subject.send(:port)
+    end
+
     it 'returns the object after configuring' do
       obj = subject.configure { |c| c.port = 80 }
       expect(obj).to be subject
