@@ -29,6 +29,18 @@ module LittleBoxes
       end
     end
 
+    def let!(name, &block)
+      let(name, &block).tap do |l|
+        l.call
+      end
+    end
+
+    def let_configured!(name, &block)
+      let_configured(name, &block).tap do |l|
+        l.call
+      end
+    end
+
     def section(name, &block)
       sub_config = self.class.new(name, parent: self)
       yield sub_config if block_given?

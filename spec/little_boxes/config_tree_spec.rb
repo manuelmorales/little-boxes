@@ -1,16 +1,22 @@
 require_relative '../spec_helper'
 
 RSpec.describe LittleBoxes::ConfigTree do
-  before do
-    server_class = Class.new do
+  let(:plain_server_class) do
+    Class.new do
       attr_accessor :port
 
       def initialize(args = {})
         @port = args[:port]
       end
     end
+  end
 
-    stub_const('Server', server_class)
+  let(:configurable_server_class) do
+    Class.new do
+      include LittleBoxes::Configurable
+      configurable :port
+      public :port
+    end
   end
 
   shared_examples_for 'ConfigTree definition' do
@@ -31,6 +37,20 @@ RSpec.describe LittleBoxes::ConfigTree do
     it 'memoizes the response' do
       subject.public_send(method_name, :server) { Server.new }
       expect(subject.server).to be subject.server
+    end
+  end
+
+  shared_examples_for 'ConfigTree eager loading' do
+    it 'eager load' do
+      target = double(:target, port: 80)
+
+      expect(target).to receive(:port)
+
+      subject.get(:port) { target.port }
+
+      subject.public_send(method_name.to_s, :server) do |c|
+        Server.new port: c.port
+      end
     end
   end
 
@@ -69,6 +89,7 @@ RSpec.describe LittleBoxes::ConfigTree do
 
   describe '#get' do
     let(:method_name) { :get }
+    before { stub_const('Server', plain_server_class) }
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree NO memoization'
@@ -76,18 +97,7 @@ RSpec.describe LittleBoxes::ConfigTree do
 
   describe '#get_configured' do
     let(:method_name) { :get_configured }
-
-    before do
-      server_class = Class.new do
-        include LittleBoxes::Configurable
-        configurable :port
-        public :port
-      end
-
-      stub_const('Server', server_class)
-
-      subject.get(:port) { 80 }
-    end
+    before { stub_const('Server', configurable_server_class) }
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree configuration'
@@ -96,29 +106,38 @@ RSpec.describe LittleBoxes::ConfigTree do
 
   describe '#let' do
     let(:method_name) { :let }
+    before { stub_const('Server', plain_server_class) }
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree memoization'
   end
 
+  describe '#let!' do
+    let(:method_name) { :let! }
+    before { stub_const('Server', plain_server_class) }
+
+    it_behaves_like 'ConfigTree definition'
+    it_behaves_like 'ConfigTree memoization'
+    it_behaves_like 'ConfigTree eager loading'
+  end
+
   describe '#let_configured' do
     let(:method_name) { :let_configured }
-
-    before do
-      server_class = Class.new do
-        include LittleBoxes::Configurable
-        configurable :port
-        public :port
-      end
-
-      stub_const('Server', server_class)
-
-      subject.get(:port) { 80 }
-    end
+    before { stub_const('Server', configurable_server_class) }
 
     it_behaves_like 'ConfigTree definition'
     it_behaves_like 'ConfigTree memoization'
     it_behaves_like 'ConfigTree configuration'
+  end
+
+  describe '#let_configured!' do
+    let(:method_name) { :let_configured! }
+    before { stub_const('Server', configurable_server_class) }
+
+    it_behaves_like 'ConfigTree definition'
+    it_behaves_like 'ConfigTree memoization'
+    it_behaves_like 'ConfigTree configuration'
+    it_behaves_like 'ConfigTree eager loading'
   end
 
   describe 'inspect' do
@@ -132,6 +151,8 @@ RSpec.describe LittleBoxes::ConfigTree do
   end
 
   describe 'section' do
+    before { stub_const('Server', plain_server_class) }
+
     it 'creates another config' do
       subject.section(:servers) do |c|
         c.get(:main) { Server.new }
@@ -148,6 +169,8 @@ RSpec.describe LittleBoxes::ConfigTree do
   end
 
   describe 'customize' do
+    before { stub_const('Server', plain_server_class) }
+
     it 'allows overriding values defined with get' do
       subject.get(:port) { 80 }
       subject.get(:server) { |c| Server.new port: c.port }
