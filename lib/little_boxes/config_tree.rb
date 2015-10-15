@@ -26,7 +26,7 @@ module LittleBoxes
     def let(name, &block)
       value = nil
       b = ->(c) { value ||= block.call c }
-      registry[name] = self.class.new name, parent: self, &b
+      registry[name] = get name, &b
     end
 
     def section(name, &block)

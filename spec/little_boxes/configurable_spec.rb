@@ -33,7 +33,6 @@ RSpec.describe LittleBoxes::Configurable do
   end
 
   it 'allows iterating through the dependencies' do
-    subject.configure { |c| c.port = 80 }
     expect(subject.config.keys).to eq [:port]
   end
 
