@@ -21,12 +21,20 @@ module LittleBoxes
       @config ||= self.class::Config.new
     end
 
+    def initialize_copy(source)
+      reset
+    end
+
     private
 
     def self.included(klass)
       klass.extend ClassMethods
       klass.const_set :Config, Class.new(ConfigBase)
       klass.const_set :ClassConfig, Class.new(ConfigBase)
+    end
+
+    def reset
+      @config = nil
     end
 
     module ClassMethods
