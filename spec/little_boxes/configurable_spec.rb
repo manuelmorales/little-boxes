@@ -5,10 +5,13 @@ RSpec.describe LittleBoxes::Configurable do
 
   before do
     stub_const('Server', Class.new { include LittleBoxes::Configurable })
-    Server.class_eval { configurable :port }
   end
 
   describe 'instance' do
+    before do
+      Server.class_eval { configurable :port, memoize: true }
+    end
+
     it 'allows passing the config in the initializer' do
       subject = Server.new(port: 80)
       expect(subject.send(:port)).to eq 80
@@ -81,10 +84,21 @@ RSpec.describe LittleBoxes::Configurable do
     end
   end
 
+  describe 'instance (not memoized)' do
+    before do
+      Server.class_eval { configurable :port }
+    end
+
+    it 'doesn\'t memoize' do
+      subject.configure { |c| c.port { Object.new } }
+      expect(subject.send(:port)).not_to be subject.send(:port)
+    end
+  end
+
   describe 'class' do
     subject do
       Server.class_eval do
-        class_configurable :port
+        class_configurable :port, memoize: true
       end
     end
 
@@ -113,6 +127,17 @@ RSpec.describe LittleBoxes::Configurable do
       subject.class_eval { class_configurable :port }
       subject.config.port { 80 }
       expect(subject.config.port).to eq 80
+    end
+  end
+
+  describe 'instance (not memoized)' do
+    before do
+      Server.class_eval { class_configurable :port }
+    end
+
+    it 'doesn\'t memoize' do
+      subject.class.configure { |c| c.port { Object.new } }
+      expect(subject.send(:port)).not_to be subject.send(:port)
     end
   end
 end

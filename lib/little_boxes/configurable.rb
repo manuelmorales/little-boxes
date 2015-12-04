@@ -49,8 +49,8 @@ module LittleBoxes
 
       private
 
-      def class_configurable(name)
-        self::ClassConfig.send :attr, name
+      def class_configurable(name, memoize: false)
+        self::ClassConfig.send (memoize ? :mem_attr : :attr), name
 
         define_singleton_method name do
           config[name]
@@ -65,8 +65,8 @@ module LittleBoxes
         private name
       end
 
-      def configurable(name)
-        self::Config.send :attr, name
+      def configurable(name, memoize: false)
+        self::Config.send (memoize ? :mem_attr : :attr), name
 
         define_method name do
           config[name]

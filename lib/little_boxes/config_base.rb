@@ -48,19 +48,33 @@ module LittleBoxes
 
     class << self
       def attr name
-        name = name.to_sym
-
-        attr_writer name
-
-        keys << name
+        def_attr name
 
         define_method name do |&block|
           if block
-            procs[name] = block
+            procs[name] ||= block
+          else
+            get(name) || get_from_proc(name)
+          end
+        end
+      end
+
+      def mem_attr name
+        def_attr name
+
+        define_method name do |&block|
+          if block
+            procs[name] ||= block
           else
             get(name) || set(name, get_from_proc(name))
           end
         end
+      end
+
+      def def_attr name
+        name = name.to_sym
+        attr_writer name
+        keys << name
       end
 
       def keys

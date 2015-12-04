@@ -30,15 +30,11 @@ module LittleBoxes
     end
 
     def let!(name, &block)
-      let(name, &block).tap do |l|
-        l.call
-      end
+      let(name, &block).tap(&:call)
     end
 
     def let_configured!(name, &block)
-      let_configured(name, &block).tap do |l|
-        l.call
-      end
+      let_configured(name, &block).tap(&:call)
     end
 
     alias letc let_configured
