@@ -12,7 +12,7 @@ RSpec.describe 'Box' do
       attr_accessor :config
 
       def logger
-        config.logger       
+        config.logger
       end
     end
 
@@ -51,13 +51,15 @@ RSpec.describe 'Box' do
         config.logger
       end
     end
-    
+
     stub_const('Box', Module.new).tap do |m|
       m.class_eval do
         def self.included(base)
           base.extend(ClassMethods)
           base.class_eval do
+            include InstanceMethods
 
+            attr_accessor :parent
           end
         end
 
@@ -102,18 +104,27 @@ RSpec.describe 'Box' do
             end
           end
 
-          def box name, box_class
-            box_proc = lambda do
-              box_class.new(parent: self)
-            end
-            let(name, &box_proc)
+          def box name, box_klass
+            let(name) { box_klass.new(parent: self) }
           end
         end
-        
+
         def eval_configured &block
           instance_eval(&block).tap do |v|
             v.config = self
           end
+        end
+
+        def method_missing meth, *args, &block
+          if parent.respond_to?(meth)
+            parent.public_send(meth, *args, &block)
+          else
+            super
+          end
+        end
+
+        def respond_to_missing? meth, include_private = false
+          parent.respond_to?(meth, include_private) || super
         end
       end
     end
@@ -121,7 +132,6 @@ RSpec.describe 'Box' do
     define_class 'UsersBox' do
       include Box
 
-      let(:logger) { Logger.new level: 'INFO' }
       letc(:api) { UsersApi }
       getc(:collection) { UsersCollection.new }
     end
@@ -203,6 +213,10 @@ RSpec.describe 'Box' do
       expect(users_collection.logger).to be_a Logger
     end
 
+    it 'is main box\'s logger' do
+      expect(users_collection.logger).to be box.logger
+    end
+
     it 'memoizes the logger' do
       expect(users_collection.logger).to be users_collection.logger
     end
@@ -215,6 +229,10 @@ RSpec.describe 'Box' do
 
     it 'has a logger' do
       expect(users_api.logger).to be_a Logger
+    end
+
+    it 'is main box\'s logger' do
+      expect(users_api.logger).to be box.logger
     end
   end
 end
