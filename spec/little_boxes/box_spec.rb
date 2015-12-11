@@ -17,10 +17,20 @@ RSpec.describe 'Box' do
     end
 
     define_class 'Logger' do
-      attr_accessor :level
-
       def initialize args
         args.each { |k,v| send "#{k}=", v }
+      end
+
+      def level
+        config[:level]
+      end
+
+      def level= value
+        config[:level] = value
+      end
+
+      def config
+        @config ||= {}
       end
     end
 
@@ -29,10 +39,44 @@ RSpec.describe 'Box' do
         attr_accessor :logger
       end
     end
+
+    define_class 'Server' do
+      def initialize config
+        @config = config
+      end
+
+      def logger
+        @config.logger
+      end
+    end
+
+    define_class 'MainBox' do
+      class << self
+        def get name, &block
+          define_method name, &block
+        end
+
+        def let name, &block
+          define_method name do
+            var_name = "@#{name}"
+
+            if value = instance_variable_get(var_name)
+              value
+            else
+              instance_variable_set var_name, instance_eval(&block)
+            end
+          end
+        end
+      end
+
+      get(:log_level) { 'INFO' }
+      let(:logger) { Logger.new level: log_level }
+      let(:server) { Server.new self }
+    end
   end
 
   let(:users_collection) { UsersCollection.new logger: logger }
-  let(:logger) { Logger.new level: log_level }
+  let(:logger) { box.logger }
 
   let(:users_api) do
     UsersApi.tap do |api|
@@ -40,11 +84,29 @@ RSpec.describe 'Box' do
     end
   end
 
+  let(:box) { MainBox.new }
+
   def log_level
-    'INFO'
+    box.log_level
   end
 
-  describe 'log_level' do
+  describe 'box' do
+    it 'memoizes' do
+      expect(box.logger).to be box.logger
+    end
+
+    it 'doesn\'t share between instances' do
+      expect(box.logger).not_to be MainBox.new.logger
+    end
+  end
+
+  describe 'server' do
+    it 'is configured' do
+      expect(box.server.logger).to be box.logger
+    end
+  end
+
+  describe 'logger' do
     it 'is a new instance every time' do
       expect(log_level).to eq 'INFO'
       expect(log_level).not_to be log_level
