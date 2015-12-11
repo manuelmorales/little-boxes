@@ -13,3 +13,4 @@ require 'little_boxes'
 
 $LOAD_PATH.unshift File.expand_path('spec/support')
 
+include LittleBoxes
