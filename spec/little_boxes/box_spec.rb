@@ -23,9 +23,9 @@ RSpec.describe 'Box' do
       getc(:users_collection) { UsersCollection.new }
       letc(:users_api) { UsersApi }
 
-      letc(:task) { Task.new }#.then do |task|
-      #   task.logger = :specific_logger
-      # end
+      letc(:task) { Task.new }.then do |task|
+        task.logger = :specific_logger
+      end
 
       eagerc(:http_client) { HttpClient }
       box(:folders, FoldersBox)
@@ -72,6 +72,10 @@ RSpec.describe 'Box' do
 
     define_class :Task do
       include Configurable
+
+      def logger= value
+        @config[:logger] = value
+      end
 
       dependency :logger
       public :logger
@@ -136,9 +140,10 @@ RSpec.describe 'Box' do
       expect(server).to be server
     end
 
-    # it 'respects previously configured dependencies' do
-    #   expect(task.logger).to be :specific_logger
-    # end
+    it 'respects previously configured dependencies' do
+      pending "do this for get, let, getc"
+      expect(task.logger).to be :specific_logger
+    end
   end
 
   describe 'users_collection (getc)' do

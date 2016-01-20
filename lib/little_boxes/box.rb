@@ -45,11 +45,7 @@ module LittleBoxes
       end
 
       def let(name, options={}, &block)
-        entry_definitions[name] = EntryDefinition.new(name, options.merge(memo: true), &block).tap do |entry|
-          define_method name do
-            @entries[name].value
-          end
-        end
+        get(name, options.merge(memo: true), &block)
       end
 
       def getc(name, &block)
@@ -96,7 +92,7 @@ module LittleBoxes
     class EntryDefinition
       attr_accessor :name, :eager, :memo, :block, :configure
 
-      def initialize(name, eager: false, memo: false, configure: false, &block)
+      def initialize(name, eager: false, memo: false, configure: false, then_block: nil, &block)
         self.name = name
         self.memo = memo
         self.eager = eager
@@ -109,14 +105,18 @@ module LittleBoxes
       end
 
       def for(box)
-        Entry.new(name: name, box: box, block: block, memo: memo, configure: configure, eager: eager)
+        Entry.new(name: name, box: box, block: block, memo: memo, configure: configure, eager: eager, then_block: @then_block)
+      end
+
+      def then(&block)
+        @then_block = block
       end
     end
 
     class Entry
       attr_accessor :name, :memo, :box, :eager, :block, :configure
 
-      def initialize(name:, eager:, memo:, box:, block:, configure:)
+      def initialize(name:, eager:, memo:, box:, block:, configure:, then_block:)
         self.name = name
         self.memo = memo
         self.box = box
@@ -124,11 +124,15 @@ module LittleBoxes
         self.configure = configure
 
         @block = if memo
+                   value = nil
+
                    if configure
-                     value = nil
-                     -> (bx) { value ||= do_configure(block.call(bx)) }
+                     if then_block
+                       -> (bx) { value ||= do_configure(block.call(bx)).tap{ |v| then_block.call v } }
+                     else
+                       -> (bx) { value ||= do_configure(block.call(bx)) }
+                     end
                    else
-                     value = nil
                      -> (bx) { value ||= block.call(bx) }
                    end
                  else
