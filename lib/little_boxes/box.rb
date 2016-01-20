@@ -29,8 +29,20 @@ module LittleBoxes
         end
       end
 
+      def eagerc(name, &block)
+        let name do
+          configure block.call
+        end
+
+        eager << name
+      end
+
       def procs
         @procs ||= {}
+      end
+
+      def eager
+        @eager ||= []
       end
 
       def inspect
@@ -54,10 +66,15 @@ module LittleBoxes
 
     def initialize
       @memo = {}
+      eager.each { |name| send(name) }
     end
 
     def procs
       self.class.procs
+    end
+
+    def eager
+      self.class.eager
     end
 
     def configure subject

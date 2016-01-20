@@ -16,6 +16,7 @@ RSpec.describe 'Box' do
       letc(:server) { Server.new }
       getc(:users_collection) { UsersCollection.new }
       letc(:users_api) { UsersApi }
+      eagerc(:http_client) { HttpClient }
     end
 
     define_class :Server do
@@ -46,14 +47,22 @@ RSpec.describe 'Box' do
       class_dependency :logger
       public_class_method :logger
     end
+  
+    define_class :HttpClient do
+      include Configurable
+      
+      class_dependency :logger
+      public_class_method :logger
+    end
   end
-
+  
   let(:box) { MainBox.new }
   define_method(:logger) { box.logger }
   define_method(:server) { box.server }
   define_method(:log_level) { box.log_level }
   define_method(:users_collection) { box.users_collection }
   define_method(:users_api) { box.users_api }
+  define_method(:http_client) { HttpClient }
 
   describe 'box' do
     it 'memoizes' do
@@ -108,13 +117,25 @@ RSpec.describe 'Box' do
     end
   end
 
-  describe 'users_api' do
+  describe 'users_api (class configurable)' do
     it 'has a logger' do
       expect(users_api.logger).to be_a Logger
     end
 
     it 'is main box\'s logger' do
       expect(users_api.logger).to be logger
+    end
+  end
+
+  describe 'http_client (eager loading)' do
+    it 'loads on box initialization' do
+      box
+      expect(http_client.logger).to be_a Logger
+    end
+
+    it 'doesn\'t eager load the dependencies' do
+      expect(box).not_to receive(:logger)
+      box
     end
   end
 end
