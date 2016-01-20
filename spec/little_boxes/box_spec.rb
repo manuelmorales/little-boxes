@@ -22,6 +22,11 @@ RSpec.describe 'Box' do
       letc(:server) { Server.new }
       getc(:users_collection) { UsersCollection.new }
       letc(:users_api) { UsersApi }
+
+      letc(:task) { Task.new }#.then do |task|
+      #   task.logger = :specific_logger
+      # end
+
       eagerc(:http_client) { HttpClient }
       box(:folders, FoldersBox)
       box(:files) do
@@ -64,6 +69,13 @@ RSpec.describe 'Box' do
       class_dependency :logger
       public_class_method :logger
     end
+
+    define_class :Task do
+      include Configurable
+
+      dependency :logger
+      public :logger
+    end
   
     define_class :HttpClient do
       include Configurable
@@ -86,6 +98,7 @@ RSpec.describe 'Box' do
   define_method(:log_level) { box.log_level }
   define_method(:users_collection) { box.users_collection }
   define_method(:users_api) { box.users_api }
+  define_method(:task) { box.task }
   define_method(:http_client) { HttpClient }
   define_method(:rest_client) { RestClient }
 
@@ -122,6 +135,10 @@ RSpec.describe 'Box' do
     it 'is memoized' do
       expect(server).to be server
     end
+
+    # it 'respects previously configured dependencies' do
+    #   expect(task.logger).to be :specific_logger
+    # end
   end
 
   describe 'users_collection (getc)' do

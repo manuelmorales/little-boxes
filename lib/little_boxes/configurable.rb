@@ -5,7 +5,7 @@ module LittleBoxes
     def initialize(options = {})
       @config = {}
 
-      config.keys.each do |k|
+      options.keys.each do |k|
         config[k] = options[k]
       end
     end

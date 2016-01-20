@@ -1,12 +1,8 @@
 module LittleBoxes
   module Box
     module ClassMethods
-      def procs
-        @procs ||= {}
-      end
-
-      def eager
-        @eager ||= []
+      def entries
+        @entries ||= {}
       end
 
       def inspect
@@ -27,8 +23,7 @@ module LittleBoxes
       end
 
       def box_from_klass(name, klass)
-        let(name) { klass.new(parent: self) }
-        eager << name
+        let(name) { klass.new(parent: self) }.tap(&:eager!)
       end
 
       def inline_box(name, &block)
@@ -38,23 +33,22 @@ module LittleBoxes
 
             instance_eval(&block)
           end.new(parent: self)
-        end
-        eager << name
+        end.tap(&:eager!)
       end
 
       def get(name, &block)
-        procs[name] = block
-
-        define_method name do
-          instance_eval(&procs[name])
+        entries[name] = Entry.new(name, &block).tap do |entry|
+          define_method name do
+            instance_eval(&(entry.proc))
+          end
         end
       end
 
       def let(name, &block)
-        procs[name] = block
-
-        define_method name do
-          @memo[name] ||= instance_eval(&procs[name])
+        entries[name] = Entry.new(name, &block).tap do |entry|
+          define_method name do
+            @memo[name] ||= instance_eval(&(entry.proc))
+          end
         end
       end
 
@@ -73,9 +67,7 @@ module LittleBoxes
       def eagerc(name, &block)
         let name do
           configure block.call
-        end
-
-        eager << name
+        end.tap(&:eager!)
       end
     end
 
@@ -96,23 +88,38 @@ module LittleBoxes
     def initialize(parent: nil)
       @memo = {}
       @parent = parent
-      eager.each { |name| send(name) }
+      entries.values.select(&:eager).each { |e| send(e.name) } 
     end
 
-    def procs
-      self.class.procs
-    end
-
-    def eager
-      self.class.eager
+    def entries
+      self.class.entries
     end
 
     def configure subject
-      subject.config = Hash.new do |h, name|
+      prev_config = subject.config
+
+      new_config = Hash.new do |h, name|
         h[name] = self[name]
       end
 
+      new_config.merge! prev_config if prev_config && !prev_config.empty?
+
+      subject.config = new_config
+
       subject
+    end
+
+    class Entry
+      attr_accessor :name, :eager, :proc
+
+      def initialize(name, &block)
+        self.name = name
+        self.proc = block
+      end
+
+      def eager!
+        self.eager = true
+      end
     end
   end
 end
