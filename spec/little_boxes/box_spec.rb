@@ -14,6 +14,8 @@ RSpec.describe 'Box' do
       let(:logger) { Logger.new level: log_level }
       get(:log_level) { 'INFO' }
       letc(:server) { Server.new }
+      getc(:users_collection) { UsersCollection.new }
+      letc(:users_api) { UsersApi }
     end
 
     define_class :Server do
@@ -30,87 +32,89 @@ RSpec.describe 'Box' do
         @level = attrs[:level]
       end
     end
+
+    define_class :UsersCollection do
+      include Configurable
+
+      dependency :logger
+      public :logger
+    end
+
+    define_class :UsersApi do
+      include Configurable
+
+      class_dependency :logger
+      public_class_method :logger
+    end
   end
 
   let(:box) { MainBox.new }
   define_method(:logger) { box.logger }
+  define_method(:server) { box.server }
   define_method(:log_level) { box.log_level }
+  define_method(:users_collection) { box.users_collection }
+  define_method(:users_api) { box.users_api }
 
   describe 'box' do
     it 'memoizes' do
-      expect(box.logger).to be box.logger
+      expect(logger).to be logger
     end
 
     it 'doesn\'t share between instances' do
-      expect(box.logger).not_to be MainBox.new.logger
+      expect(logger).not_to be MainBox.new.logger
     end
   end
 
   describe 'logger' do
-    it 'is a new instance every time' do
+    it 'is a new instance every time (get)' do
       expect(log_level).to eq 'INFO'
       expect(log_level).not_to be log_level
     end
 
-    it 'has the log_level' do
+    it 'has the log_level (relying on other deps)' do
       expect(logger.level).to eq log_level
     end
 
-    it 'has memoized log_level' do
+    it 'has memoized log_level (let memoizes)' do
       expect(logger.level).to be logger.level
     end
   end
 
-  describe 'server' do
+  describe 'server (letc)' do
     it 'is configured' do
-      expect(box.server.logger).to be box.logger
+      expect(server.logger).to be logger
     end
 
-    it 'is not memoized' do
-      expect(box.server).to be box.server
+    it 'is memoized' do
+      expect(server).to be server
     end
   end
 
-  # describe 'server' do
-  #   it 'is configured' do
-  #     expect(box.server.logger).to be box.logger
-  #   end
+  describe 'users_collection (getc)' do
+    it 'doesn\'t memoize' do
+      expect(users_collection).not_to be users_collection
+    end
 
-  #   it 'is not memoized' do
-  #     expect(box.server).not_to be box.server
-  #   end
-  # end
+    it 'has a logger' do
+      expect(users_collection.logger).to be_a Logger
+    end
 
+    it 'is main box\'s logger' do
+      expect(users_collection.logger).to be logger
+    end
 
-  # describe 'users_collection' do
-  #   it 'exists' do
-  #     expect(users_collection).to be_a UsersCollection
-  #   end
+    it 'memoizes the logger' do
+      expect(users_collection.logger).to be users_collection.logger
+    end
+  end
 
-  #   it 'has a logger' do
-  #     expect(users_collection.logger).to be_a Logger
-  #   end
+  describe 'users_api' do
+    it 'has a logger' do
+      expect(users_api.logger).to be_a Logger
+    end
 
-  #   it 'is main box\'s logger' do
-  #     expect(users_collection.logger).to be box.logger
-  #   end
-
-  #   it 'memoizes the logger' do
-  #     expect(users_collection.logger).to be users_collection.logger
-  #   end
-  # end
-
-  # describe 'users_api' do
-  #   it 'exists' do
-  #     expect(users_api).to be UsersApi
-  #   end
-
-  #   it 'has a logger' do
-  #     expect(users_api.logger).to be_a Logger
-  #   end
-
-  #   it 'is main box\'s logger' do
-  #     expect(users_api.logger).to be box.logger
-  #   end
-  # end
+    it 'is main box\'s logger' do
+      expect(users_api.logger).to be logger
+    end
+  end
 end

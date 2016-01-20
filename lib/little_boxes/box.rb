@@ -17,6 +17,12 @@ module LittleBoxes
         end
       end
 
+      def getc(name, &block)
+        get name do
+          configure block.call
+        end
+      end
+
       def letc(name, &block)
         let name do
           configure block.call

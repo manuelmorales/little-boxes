@@ -14,6 +14,13 @@ module LittleBoxes
 
     def self.included(klass)
       klass.extend ClassMethods
+
+      klass.class_eval do
+        class << self 
+          attr_accessor :config
+          instance_variable_set :@config, {}
+        end
+      end
     end
 
     module ClassMethods
@@ -21,6 +28,14 @@ module LittleBoxes
         private
 
         define_method name do
+          @config[name]
+        end
+      end
+
+      def class_dependency name
+        private
+
+        define_singleton_method name do
           @config[name]
         end
       end
