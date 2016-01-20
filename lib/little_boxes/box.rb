@@ -1,6 +1,47 @@
 module LittleBoxes
   module Box
     module ClassMethods
+      def procs
+        @procs ||= {}
+      end
+
+      def eager
+        @eager ||= []
+      end
+
+      def inspect
+        "#{name}(#{procs.keys.map(&:inspect).join(", ")})"
+      end
+
+      private
+
+      def box(name, klass = nil, &block)
+        if klass
+          box_from_klass(name, klass)
+        elsif block_given?
+          inline_box(name, &block)
+        else
+          fail ArgumentError,
+            'Either class or block should be passed as argument'
+        end
+      end
+
+      def box_from_klass(name, klass)
+        let(name) { klass.new(parent: self) }
+        eager << name
+      end
+
+      def inline_box(name, &block)
+        let(name) do
+          Class.new do
+            include ::LittleBoxes::Box
+
+            instance_eval(&block)
+          end.new(parent: self)
+        end
+        eager << name
+      end
+
       def get(name, &block)
         procs[name] = block
 
@@ -36,18 +77,6 @@ module LittleBoxes
 
         eager << name
       end
-
-      def procs
-        @procs ||= {}
-      end
-
-      def eager
-        @eager ||= []
-      end
-
-      def inspect
-        "#{name}(#{procs.keys.map(&:inspect).join(", ")})"
-      end
     end
 
     def self.included(klass)
@@ -55,7 +84,7 @@ module LittleBoxes
     end
 
     def [] name
-      @memo[name] || send(name)
+      @memo[name] || (respond_to?(name) && send(name)) || (@parent && @parent[name])
     end
 
     def inspect
@@ -64,8 +93,9 @@ module LittleBoxes
 
     private
 
-    def initialize
+    def initialize(parent: nil)
       @memo = {}
+      @parent = parent
       eager.each { |name| send(name) }
     end
 

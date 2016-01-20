@@ -8,6 +8,12 @@ RSpec.describe 'Box' do
   end
 
   before do
+    define_class :FoldersBox do
+      include Box
+
+      letc(:collection) { FoldersCollection.new }
+    end
+
     define_class :MainBox do
       include Box
 
@@ -17,6 +23,10 @@ RSpec.describe 'Box' do
       getc(:users_collection) { UsersCollection.new }
       letc(:users_api) { UsersApi }
       eagerc(:http_client) { HttpClient }
+      box(:folders, FoldersBox)
+      box(:files) do
+        eagerc(:rest_client) { RestClient }        
+      end
     end
 
     define_class :Server do
@@ -41,6 +51,13 @@ RSpec.describe 'Box' do
       public :logger
     end
 
+    define_class :FoldersCollection do
+      include Configurable
+    
+      dependency :logger
+      public :logger
+    end
+
     define_class :UsersApi do
       include Configurable
 
@@ -54,6 +71,13 @@ RSpec.describe 'Box' do
       class_dependency :logger
       public_class_method :logger
     end
+
+    define_class :RestClient do
+      include Configurable
+
+      class_dependency :logger
+      public_class_method :logger
+    end
   end
   
   let(:box) { MainBox.new }
@@ -63,6 +87,7 @@ RSpec.describe 'Box' do
   define_method(:users_collection) { box.users_collection }
   define_method(:users_api) { box.users_api }
   define_method(:http_client) { HttpClient }
+  define_method(:rest_client) { RestClient }
 
   describe 'box' do
     it 'memoizes' do
@@ -137,5 +162,29 @@ RSpec.describe 'Box' do
       expect(box).not_to receive(:logger)
       box
     end
+  end
+
+  describe 'nested boxes' do
+    describe 'given a box' do
+      it 'initializes second level box on first level box initialization' do
+        expect(FoldersBox).to receive(:new)
+        box
+      end
+
+      it 'allows to navigate to element of second level box' do
+        expect(box.folders.collection).to be_a FoldersCollection
+      end
+
+      it 'configures looking up the tree' do
+        expect(box.folders.collection.logger).to be(logger)
+      end
+    end
+
+    describe 'inline box' do
+      it 'eager loads eager loadable stuff on the second level' do
+        box
+        expect(rest_client.logger).to be logger     
+      end
+    end 
   end
 end
