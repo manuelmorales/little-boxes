@@ -53,7 +53,6 @@ RSpec.describe 'Box' do
     end
 
     it 'has the log_level' do
-      binding.pry
       expect(logger.level).to eq log_level
     end
 
