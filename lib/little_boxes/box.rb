@@ -1,12 +1,12 @@
 module LittleBoxes
   module Box
     module ClassMethods
-      def entries
-        @entries ||= {}
+      def entry_definitions
+        @entry_definitions ||= {}
       end
 
       def inspect
-        "#{name}(#{procs.keys.map(&:inspect).join(", ")})"
+        "#{name}(#{entry_definitions.keys.map(&:inspect).join(", ")})"
       end
 
       private
@@ -23,51 +23,45 @@ module LittleBoxes
       end
 
       def box_from_klass(name, klass)
-        let(name) { klass.new(parent: self) }.tap(&:eager!)
+        let(name, eager: true) { |box| klass.new(parent: box) }
       end
 
       def inline_box(name, &block)
-        let(name) do
+        let(name, eager: true) do |box|
           Class.new do
             include ::LittleBoxes::Box
 
             instance_eval(&block)
-          end.new(parent: self)
-        end.tap(&:eager!)
+          end.new(parent: box)
+        end
       end
 
-      def get(name, &block)
-        entries[name] = Entry.new(name, &block).tap do |entry|
+      def get(name, options={}, &block)
+        entry_definitions[name] = EntryDefinition.new(name, options, &block).tap do |entry|
           define_method name do
-            instance_eval(&(entry.proc))
+            @entries[name].value
           end
         end
       end
 
-      def let(name, &block)
-        entries[name] = Entry.new(name, &block).tap do |entry|
+      def let(name, options={}, &block)
+        entry_definitions[name] = EntryDefinition.new(name, options.merge(memo: true), &block).tap do |entry|
           define_method name do
-            @memo[name] ||= instance_eval(&(entry.proc))
+            @entries[name].value
           end
         end
       end
 
       def getc(name, &block)
-        get name do
-          configure block.call
-        end
+        get(name, configure: true, &block)
       end
 
       def letc(name, &block)
-        let name do
-          configure block.call
-        end
+        let(name, configure: true, &block)
       end
 
       def eagerc(name, &block)
-        let name do
-          configure block.call
-        end.tap(&:eager!)
+        let(name, eager: true, configure: true, &block)
       end
     end
 
@@ -76,11 +70,13 @@ module LittleBoxes
     end
 
     def [] name
-      @memo[name] ||= (respond_to?(name) && send(name)) || (@parent && @parent[name])
+      @entries[name] &&
+        @entries[name].value ||
+        @parent[name]
     end
 
     def inspect
-      "#<#{self.class.name} #{procs.keys.map(&:inspect).join(", ")}>"
+      "#<#{self.class.name} #{entries.keys.map(&:inspect).join(", ")}>"
     end
 
     private
@@ -88,38 +84,80 @@ module LittleBoxes
     def initialize(parent: nil)
       @memo = {}
       @parent = parent
-      entries.values.select(&:eager).each { |e| send(e.name) } 
+      @entries = entry_definitions.each_with_object({}) { |(k,v), acc| acc[k] = v.for(self) }
+      @entries.values.select(&:eager).each { |e| send(e.name) } 
     end
 
-    def entries
-      self.class.entries
+    def entry_definitions
+      self.class.entry_definitions
     end
 
-    def configure subject
-      prev_config = subject.config
 
-      new_config = Hash.new do |h, name|
-        h[name] = self[name]
-      end
+    class EntryDefinition
+      attr_accessor :name, :eager, :memo, :block, :configure
 
-      new_config.merge! prev_config if prev_config && !prev_config.empty?
-
-      subject.config = new_config
-
-      subject
-    end
-
-    class Entry
-      attr_accessor :name, :eager, :proc
-
-      def initialize(name, &block)
+      def initialize(name, eager: false, memo: false, configure: false, &block)
         self.name = name
-        self.proc = block
+        self.memo = memo
+        self.eager = eager
+        self.configure = configure
+        self.block = block
       end
 
       def eager!
         self.eager = true
       end
+
+      def for(box)
+        Entry.new(name: name, box: box, block: block, memo: memo, configure: configure, eager: eager)
+      end
+    end
+
+    class Entry
+      attr_accessor :name, :memo, :box, :eager, :block, :configure
+
+      def initialize(name:, eager:, memo:, box:, block:, configure:)
+        self.name = name
+        self.memo = memo
+        self.box = box
+        self.eager = eager
+        self.configure = configure
+
+        @block = if memo
+                   if configure
+                     value = nil
+                     -> (bx) { value ||= do_configure(block.call(bx)) }
+                   else
+                     value = nil
+                     -> (bx) { value ||= block.call(bx) }
+                   end
+                 else
+                   if configure
+                     -> (bx) { do_configure(block.call(bx)) }
+                   else
+                     block
+                   end
+                 end
+      end
+
+      def value
+        @block.call(@box)
+      end
+
+      def do_configure subject
+        prev_config = subject.config
+
+        new_config = Hash.new do |h, name|
+          h[name] = @box[name]
+        end
+
+        new_config.merge! prev_config if prev_config && !prev_config.empty?
+
+        subject.config = new_config
+
+        subject
+      end
+
     end
   end
 end

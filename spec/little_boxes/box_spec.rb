@@ -17,7 +17,7 @@ RSpec.describe 'Box' do
     define_class :MainBox do
       include Box
 
-      let(:logger) { Logger.new level: log_level }
+      let(:logger) {|c| Logger.new level: c.log_level }
       get(:log_level) { 'INFO' }
       letc(:server) { Server.new }
       getc(:users_collection) { UsersCollection.new }
