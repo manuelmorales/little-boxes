@@ -84,7 +84,7 @@ module LittleBoxes
     end
 
     def [] name
-      @memo[name] || (respond_to?(name) && send(name)) || (@parent && @parent[name])
+      @memo[name] ||= (respond_to?(name) && send(name)) || (@parent && @parent[name])
     end
 
     def inspect
@@ -109,7 +109,7 @@ module LittleBoxes
 
     def configure subject
       subject.config = Hash.new do |h, name|
-        self[name]
+        h[name] = self[name]
       end
 
       subject
