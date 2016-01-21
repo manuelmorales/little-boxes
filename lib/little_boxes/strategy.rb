@@ -5,35 +5,35 @@ module LittleBoxes
     def for(block, memo: false, configure: false, then_block: nil)
       case [memo, configure, !!then_block]
       when [true, true, true]
-        memo_configure_then_block_strategy(block, then_block)
+        memo_configure_then(block, then_block)
       when [true, true, false]
-        memo_configure_strategy(block)
+        memo_configure(block)
       when [true, false, true]
-        memo_then_block_strategy(block, then_block)
+        memo_then(block, then_block)
       when [true, false, false]
-        memo_strategy(block)
+        memo(block)
       when [false, true, true]
-        configure_then_block_strategy(block, then_block)
+        configure_then(block, then_block)
       when [false, true, false]
-        configure_strategy(block)
+        configure(block)
       when [false, false, true]
-        then_block_strategy(block, then_block)
+        then_block(block, then_block)
       else
-        default_strategy(block)
+        default(block)
       end
     end
 
-    def memo_configure_strategy(block)
+    def memo_configure(block)
       value = nil
       -> (bx) { value ||= do_configure(block.call(bx), bx) }
     end
 
-    def memo_then_block_strategy(block, then_block)
+    def memo_then(block, then_block)
       value = nil
       -> (bx) { value ||= block.call(bx).tap { |v| then_block.call v, bx } }
     end
 
-    def memo_configure_then_block_strategy(block, then_block)
+    def memo_configure_then(block, then_block)
       value = nil
       -> (bx) do
         value ||= do_configure(block.call(bx), bx)
@@ -41,26 +41,26 @@ module LittleBoxes
       end
     end
 
-    def memo_strategy(block)
+    def memo(block)
       value = nil
       -> (bx) { value ||= block.call(bx) }
     end
 
-    def configure_strategy(block)
+    def configure(block)
       -> (bx) { do_configure(block.call(bx), bx) }
     end
 
-    def then_block_strategy(block, then_block)
+    def then_block(block, then_block)
       -> (bx) { block.call(bx).tap { |v| then_block.call v, bx } }
     end
 
-    def configure_then_block_strategy(block, then_block)
+    def configure_then(block, then_block)
       -> (bx) do
         do_configure(block.call(bx), bx).tap{ |v| then_block.call v, bx }
       end
     end
 
-    def default_strategy(block)
+    def default(block)
       block
     end
 
