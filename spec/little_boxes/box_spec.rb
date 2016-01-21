@@ -1,341 +1,225 @@
 require_relative '../spec_helper'
-require 'ostruct'
 
-describe LittleBoxes::Box do
-  subject{ described_class.new }
-
-  describe '#customize' do
-    it 'allows customizing dependencies' do
-      subject.let(:loglevel) { 0 }
-      subject.let(:logger) { double('logger', loglevel: loglevel) }
-
-      subject.customize(:logger) do |l|
-        l.let(:loglevel) { 1 }
-      end
-
-      expect(subject.logger.loglevel).to eq 1
-    end
-
-    it 'supports overriding lets attributes from the outside' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.let(:server) { server_class.new }
-
-      subject.customize(:server) do
-        let(:logger) { :new_logger }
-      end
-
-      expect(subject.server.logger).to be :new_logger
+RSpec.describe 'Box' do
+  def define_class name, &block
+    stub_const(name.to_s, Class.new).tap do |c|
+      c.class_eval(&block)
     end
   end
 
-  describe '#let' do
-    it 'has freely defined registers with just a lambda' do
-      subject.let(:loglevel) { 0 }
-      expect(subject.loglevel).to eq 0
+  before do
+    define_class :FoldersBox do
+      include Box
+
+      letc(:collection) { FoldersCollection.new }
     end
 
-    it 'memoizes the result' do
-      n = 0
-      subject.let(:loglevel) { n = n + 1 }
+    define_class :MainBox do
+      include Box
 
-      expect(subject.loglevel).to eq 1
-      expect(subject.loglevel).to eq 1
-    end
+      let(:logger) {|c| Logger.new level: c.log_level }
+      get(:log_level) { 'INFO' }
+      letc(:server) { Server.new }
+      getc(:users_collection) { UsersCollection.new }
+      letc(:users_api) { UsersApi }
 
-    it 'allows referencing other dependencies within such lambda' do
-      subject.let(:loglevel) { 0 }
-      subject.let(:logger) { double('logger', loglevel: loglevel) }
-      expect(subject.logger.loglevel).to eq 0
-    end
-
-    it 'has instances that have dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
+      letc(:task) { Task.new }.then do |task, box|
+        task.logger = :specific_logger
+        task.log_level = box.log_level
       end
 
-      subject.let(:logger) { double('logger') }
-      subject.let(:server) { server_class.new }
-      expect(subject.server.logger).to be subject.logger
+      eagerc(:http_client) { HttpClient }
+      box(:folders, FoldersBox)
+      box(:files) do
+        eagerc(:rest_client) { RestClient }
+      end
     end
 
-    it 'unknown dependencies raise exception' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :unknown_dep
-      end
+    define_class :Server do
+      include Configurable
 
-      subject.let(:server) { server_class.new }
-      expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
+      dependency :logger
+      public :logger
     end
 
-    it 'has classes that have class dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        class_dependency :host
-      end
+    define_class :Logger do
+      attr_accessor :level
 
-      subject.let(:host) { 'localhost' }
-      subject.let(:server_class) { server_class }
-      expect(subject.server_class.host).to eq 'localhost'
+      def initialize(attrs)
+        @level = attrs[:level]
+      end
     end
 
-    it 'supports defaults' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :log, default: ->(d){ d.logger }
-      end
+    define_class :UsersCollection do
+      include Configurable
 
-      subject.let(:logger) { :logger }
-
-      subject.let(:server) { server_class.new }
-
-      expect(subject.server.log).to be :logger
+      dependency :logger
+      public :logger
     end
 
-    it 'assigns dependencies with lambdas' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
+    define_class :FoldersCollection do
+      include Configurable
 
-        dependency :logger
-      end
-
-      subject.let(:server) { server_class.new }
-
-      subject.let(:logger) { :old }
-      expect(subject.server.logger).to be :old
-
-      subject.let(:logger) { :new }
-      expect(subject.server.logger).to be :new
+      dependency :logger
+      public :logger
     end
 
-    it 'supports overriding specific attributes' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
+    define_class :UsersApi do
+      include Configurable
+
+      class_dependency :logger
+      public_class_method :logger
+    end
+
+    define_class :Task do
+      include Configurable
+
+      def logger= value
+        @config[:logger] = value
       end
 
-      subject.let(:logger) { :logger }
-      subject.let(:new_logger) { :new_logger }
+      dependency :logger
+      public :logger
 
-      subject.let(:server) do
-        build { server_class.new }
-        let(:logger) { new_logger }
+      def log_level= value
+        @config[:log_level] = value
       end
 
-      expect(subject.server.logger).to be :new_logger
+      dependency :log_level
+      public :log_level
+    end
+
+    define_class :HttpClient do
+      include Configurable
+
+      class_dependency :logger
+      public_class_method :logger
+    end
+
+    define_class :RestClient do
+      include Configurable
+
+      class_dependency :logger
+      public_class_method :logger
     end
   end
 
-  describe '#obtain' do
-    it 'does not memoize the result' do
-      n = 0
-      subject.obtain(:loglevel) { n = n + 1 }
+  let(:box) { MainBox.new }
+  define_method(:logger) { box.logger }
+  define_method(:server) { box.server }
+  define_method(:log_level) { box.log_level }
+  define_method(:users_collection) { box.users_collection }
+  define_method(:users_api) { box.users_api }
+  define_method(:task) { box.task }
+  define_method(:http_client) { HttpClient }
+  define_method(:rest_client) { RestClient }
 
-      expect(subject.loglevel).to eq 1
-      expect(subject.loglevel).to eq 2
+  describe 'box' do
+    it 'memoizes' do
+      expect(logger).to be logger
     end
 
-    it 'doesn not inject anything' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { double('logger') }
-      subject.obtain(:server) { server_class.new.tap { |s| s.logger = :old_logger } }
-      expect(subject.server.logger).to be :old_logger
-    end
-  end
-
-  describe '#define' do
-    it 'does not memoize the result' do
-      n = 0
-      subject.define(:loglevel) { n = n + 1 }
-
-      expect(subject.loglevel).to eq 1
-      expect(subject.loglevel).to eq 2
-    end
-
-    it 'has instances that have dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { double('logger') }
-      subject.define(:server) { server_class.new }
-      expect(subject.server.logger).to be subject.logger
-    end
-
-    it 'unknown dependencies raise exception' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :unknown_dep
-      end
-
-      subject.define(:server) { server_class.new }
-      expect{ subject.server.unknown_dep }.to raise_error(LittleBoxes::MissingDependency)
-    end
-
-    it 'has classes that have class dependencies' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        class_dependency :host
-      end
-
-      subject.let(:host) { 'localhost' }
-      subject.define(:server_class) { server_class }
-      expect(subject.server_class.host).to eq 'localhost'
-    end
-
-    it 'supports defaults' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :log, default: ->(d){ d.logger }
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.define(:server) { server_class.new }
-
-      expect(subject.server.log).to be :logger
-    end
-
-    it 'assigns dependencies with lambdas' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-
-        dependency :logger
-      end
-
-      subject.define(:server) { server_class.new }
-
-      subject.let(:logger) { :old }
-      expect(subject.server.logger).to be :old
-
-      subject.let(:logger) { :new }
-      expect(subject.server.logger).to be :new
+    it 'doesn\'t share between instances' do
+      expect(logger).not_to be MainBox.new.logger
     end
   end
 
-  describe '#box' do
-    it 'supports boxes' do
-      subject.box :loggers do
-        let(:null) { :null_logger }
-        let(:file) { :file_logger }
-      end
-
-      expect(subject.loggers.null).to be :null_logger
+  describe 'logger' do
+    it 'is a new instance every time (get)' do
+      expect(log_level).to eq 'INFO'
+      expect(log_level).not_to be log_level
     end
 
-    it 'supports finding dependencies upwards in the ancestry' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :logger
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.box :servers do
-        let(:one) { server_class.new }
-      end
-
-      expect(subject.servers.one.logger).to be :logger
+    it 'has the log_level (relying on other deps)' do
+      expect(logger.level).to eq log_level
     end
 
-    it 'defaults within boxes' do
-      server_class = Class.new do
-        include LittleBoxes::Dependant
-        dependency :log, default: ->(a){ a.logger }
-      end
-
-      subject.let(:logger) { :logger }
-
-      subject.box :servers do
-        let(:apache) { server_class.new }
-      end
-
-      expect(subject.servers.apache.log).to be :logger
+    it 'has memoized log_level (let memoizes)' do
+      expect(logger.level).to be logger.level
     end
   end
 
-  describe '#inspect' do
-    it 'has nice inspect' do
-      subject.let(:loglevel) { 0 }
-      subject.let(:logger) { 0 }
-      expect(subject.inspect).to eq "<LittleBoxes::Box box: loglevel logger>"
+  describe 'server (letc)' do
+    it 'is configured' do
+      expect(server.logger).to be logger
     end
-  end
-  
-  describe '#path' do
-    it 'has a path' do
-      subject.box :second do
-        box :third do
-        end
-      end
 
-      expect(subject.second.third.path).to eq [subject, subject.second, subject.second.third]
+    it 'is memoized' do
+      expect(server).to be server
     end
-  end
 
-  describe '#name' do
-    it 'names boxes' do
-      subject.name = :first
+    it 'respects previously configured dependencies' do
+      pending "do this for get, let, getc"
+      expect(task.logger).to be :specific_logger
+    end
 
-      subject.box :second do
-        box :third do
-        end
-      end
-
-      expect(subject.second.third.path.map(&:name)).to eq [:first, :second, :third]
+    it 'has access to the box' do
+      pending "do this for get, let, getc"
+      expect(task.log_level).to eq box.log_level
     end
   end
 
-  describe '#reset' do
-    it 'has a reset' do
-      first = subject
+  describe 'users_collection (getc)' do
+    it 'doesn\'t memoize' do
+      expect(users_collection).not_to be users_collection
+    end
 
-      first.box :second do
-        let(:logger) { Object.new }
-      end
+    it 'has a logger' do
+      expect(users_collection.logger).to be_a Logger
+    end
 
-      old_logger = first.second.logger
+    it 'is main box\'s logger' do
+      expect(users_collection.logger).to be logger
+    end
 
-      first.reset
-      expect(first.second.logger).not_to be old_logger
+    it 'memoizes the logger' do
+      expect(users_collection.logger).to be users_collection.logger
     end
   end
 
-  describe '#root' do
-    it 'has a root' do
-      first = subject
+  describe 'users_api (class configurable)' do
+    it 'has a logger' do
+      expect(users_api.logger).to be_a Logger
+    end
 
-      first.box :second do
-        box(:third) { }
-      end
-
-      expect(first.second.third.root).to eq first
+    it 'is main box\'s logger' do
+      expect(users_api.logger).to be logger
     end
   end
 
-  describe '.new' do
-    it 'executes block on initialize' do
-      subject = described_class.new do
-        let(:loglevel) { 0 }
-      end
-
-      expect(subject.loglevel).to eq 0
+  describe 'http_client (eager loading)' do
+    it 'loads on box initialization' do
+      box
+      expect(http_client.logger).to be_a Logger
     end
 
-    it 'can build instances' do
-      expect(subject).to be_a(described_class)
+    it 'doesn\'t eager load the dependencies' do
+      expect(box).not_to receive(:logger)
+      box
+    end
+  end
+
+  describe 'nested boxes' do
+    describe 'given a box' do
+      it 'initializes second level box on first level box initialization' do
+        expect(FoldersBox).to receive(:new)
+        box
+      end
+
+      it 'allows to navigate to element of second level box' do
+        expect(box.folders.collection).to be_a FoldersCollection
+      end
+
+      it 'configures looking up the tree' do
+        expect(box.folders.collection.logger).to be(logger)
+      end
+    end
+
+    describe 'inline box' do
+      it 'eager loads eager loadable stuff on the second level' do
+        box
+        expect(rest_client.logger).to be logger
+      end
     end
   end
 end
