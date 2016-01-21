@@ -1,6 +1,6 @@
 module LittleBoxes
   class Entry
-    attr_accessor :name, :memo, :box, :eager, :block, :configure
+    attr_accessor :name, :memo, :box, :eager, :block, :configure, :then_block
 
     def initialize(name:, eager:, memo:, box:, block:, configure:, then_block:)
       self.name = name
@@ -8,40 +8,15 @@ module LittleBoxes
       self.box = box
       self.eager = eager
       self.configure = configure
+      self.then_block = then_block
 
-      @block = if memo
-                 value = nil
-
-                 if configure
-                   if then_block
-                     -> (bx) { value ||= do_configure(block.call(bx)).tap{ |v| then_block.call v, bx } }
-                   else
-                     -> (bx) { value ||= do_configure(block.call(bx)) }
-                   end
-                 else
-                   -> (bx) { value ||= block.call(bx) }
-                 end
-               else
-                 if configure
-                   -> (bx) { do_configure(block.call(bx)) }
-                 else
-                   block
-                 end
-               end
+      @block = Strategy.for(
+        block, memo: @memo, configure: @configure, then_block: @then_block
+      )
     end
 
     def value
       @block.call(@box)
-    end
-
-    def do_configure subject
-      config = subject.config ||= Hash.new
-
-      config.default_proc = proc do |h, name|
-        h[name] = @box[name]
-      end
-
-      subject
     end
   end
 end
