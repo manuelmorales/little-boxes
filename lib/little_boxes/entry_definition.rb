@@ -15,7 +15,10 @@ module LittleBoxes
     end
 
     def for(box)
-      Entry.new(name: name, box: box, block: block, memo: memo, configure: configure, eager: eager, then_block: @then_block)
+      Entry.new(
+        name: name, box: box, block: block, memo: memo,
+        configure: configure, eager: eager, then_block: @then_block
+      )
     end
 
     def then(&block)

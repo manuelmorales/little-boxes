@@ -85,7 +85,7 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
 
     it 'measures first dependency injection time' do
       box = box()
-      measure { box.new_server.logger } 
+      measure { box.new_server.logger }
     end
   end
 
@@ -133,7 +133,7 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
 
     it 'measures first dependency injection time (deep)' do
       box = box().level.level.level
-      measure { box.new_server.logger } 
+      measure { box.new_server.logger }
     end
   end
 end

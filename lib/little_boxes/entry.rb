@@ -35,15 +35,11 @@ module LittleBoxes
     end
 
     def do_configure subject
-      prev_config = subject.config
+      config = subject.config ||= Hash.new
 
-      new_config = Hash.new do |h, name|
+      config.default_proc = proc do |h, name|
         h[name] = @box[name]
       end
-
-      new_config.merge! prev_config if prev_config && !prev_config.empty?
-
-      subject.config = new_config
 
       subject
     end

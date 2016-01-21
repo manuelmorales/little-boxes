@@ -37,7 +37,8 @@ module LittleBoxes
       end
 
       def get(name, options={}, &block)
-        entry_definitions[name] = EntryDefinition.new(name, options, &block).tap do |entry|
+        entry_definitions[name] = EntryDefinition.new(name, options, &block)
+          .tap do |entry|
           define_method name do
             @entries[name].value
           end
@@ -66,9 +67,7 @@ module LittleBoxes
     end
 
     def [] name
-      @entries[name] &&
-        @entries[name].value ||
-        @parent[name]
+      @entries[name] && @entries[name].value || @parent[name]
     end
 
     def inspect
@@ -80,7 +79,9 @@ module LittleBoxes
     def initialize(parent: nil)
       @memo = {}
       @parent = parent
-      @entries = entry_definitions.each_with_object({}) { |(k,v), acc| acc[k] = v.for(self) }
+      @entries = entry_definitions.each_with_object({}) do |(k,v), acc|
+        acc[k] = v.for(self)
+      end
       @entries.values.select(&:eager).each { |e| send(e.name) }
     end
 
