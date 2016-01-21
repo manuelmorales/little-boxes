@@ -23,14 +23,15 @@ RSpec.describe 'Box' do
       getc(:users_collection) { UsersCollection.new }
       letc(:users_api) { UsersApi }
 
-      letc(:task) { Task.new }.then do |task|
+      letc(:task) { Task.new }.then do |task, box|
         task.logger = :specific_logger
+        task.log_level = box.log_level
       end
 
       eagerc(:http_client) { HttpClient }
       box(:folders, FoldersBox)
       box(:files) do
-        eagerc(:rest_client) { RestClient }        
+        eagerc(:rest_client) { RestClient }
       end
     end
 
@@ -58,7 +59,7 @@ RSpec.describe 'Box' do
 
     define_class :FoldersCollection do
       include Configurable
-    
+
       dependency :logger
       public :logger
     end
@@ -79,11 +80,18 @@ RSpec.describe 'Box' do
 
       dependency :logger
       public :logger
+
+      def log_level= value
+        @config[:log_level] = value
+      end
+
+      dependency :log_level
+      public :log_level
     end
-  
+
     define_class :HttpClient do
       include Configurable
-      
+
       class_dependency :logger
       public_class_method :logger
     end
@@ -95,7 +103,7 @@ RSpec.describe 'Box' do
       public_class_method :logger
     end
   end
-  
+
   let(:box) { MainBox.new }
   define_method(:logger) { box.logger }
   define_method(:server) { box.server }
@@ -143,6 +151,11 @@ RSpec.describe 'Box' do
     it 'respects previously configured dependencies' do
       pending "do this for get, let, getc"
       expect(task.logger).to be :specific_logger
+    end
+
+    it 'has access to the box' do
+      pending "do this for get, let, getc"
+      expect(task.log_level).to eq box.log_level
     end
   end
 
@@ -205,8 +218,8 @@ RSpec.describe 'Box' do
     describe 'inline box' do
       it 'eager loads eager loadable stuff on the second level' do
         box
-        expect(rest_client.logger).to be logger     
+        expect(rest_client.logger).to be logger
       end
-    end 
+    end
   end
 end
