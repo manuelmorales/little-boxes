@@ -10,6 +10,10 @@ module LittleBoxes
       end
     end
 
+    def configure(&block)
+      yield @config
+    end
+
     private
 
     def self.included(klass)
@@ -37,6 +41,10 @@ module LittleBoxes
 
         define_singleton_method name do
           @config[name]
+        end
+
+        define_method name do
+          self.class.config[name]
         end
       end
     end
