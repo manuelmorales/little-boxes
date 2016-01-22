@@ -1,7 +1,6 @@
 require_relative 'spec_helper'
 require 'benchmark'
 require 'logger'
-require 'ruby-prof'
 
 RSpec.describe 'Benchmark the speed', benchmark: true do
   def define_class name, &block
@@ -21,11 +20,8 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
   end
 
   def measure
-    # RubyProf.start
     b = Benchmark.measure{ iterations.times { yield } }
     @results << {name: test_name, time: b.real}
-    # results = RubyProf.stop
-    # RubyProf::CallStackPrinter.new(results).print(File.open('/tmp/performance/'+test_name+'.html', 'w'), threshold: 0)
   end
 
   before :all do
