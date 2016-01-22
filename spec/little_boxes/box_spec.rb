@@ -30,6 +30,7 @@ RSpec.describe 'Box' do
 
       eagerc(:http_client) { HttpClient }
       eager(:api_client) { |b| ApiClient.tap { |ac| ac.logger = b.logger } }
+      letc(:some_client) { SomeClient }
       box(:folders, FoldersBox)
       box(:files) do
         eagerc(:rest_client) { RestClient }
@@ -109,6 +110,13 @@ RSpec.describe 'Box' do
         attr_accessor :logger
       end
     end
+
+    define_class :SomeClient do
+      include Configurable
+
+      class_dependency :idontexist
+      public_class_method :idontexist
+    end
   end
 
   let(:box) { MainBox.new }
@@ -121,6 +129,7 @@ RSpec.describe 'Box' do
   define_method(:http_client) { HttpClient }
   define_method(:rest_client) { RestClient }
   define_method(:api_client) { ApiClient }
+  define_method(:some_client) { box.some_client }
 
   describe 'box' do
     it 'memoizes' do
@@ -157,14 +166,14 @@ RSpec.describe 'Box' do
     end
 
     it 'respects previously configured dependencies' do
-      pending "do this for get, let, getc"
       expect(task.logger).to be :specific_logger
     end
 
     it 'has access to the box' do
-      pending "do this for get, let, getc"
       expect(task.log_level).to eq box.log_level
     end
+
+    pending 'test for get, getc, let'
   end
 
   describe 'users_collection (getc)' do
@@ -216,6 +225,15 @@ RSpec.describe 'Box' do
     it 'doesn\'t eager load the dependencies' do
       expect(box).not_to receive(:logger)
       box
+    end
+  end
+
+  describe 'error handling (unmet dependency)' do
+    it 'sends a pretty error' do
+      expect { some_client.idontexist }.to raise_error(
+        LittleBoxes::DependencyNotFound,
+        'Dependency idontexist not found'
+      )
     end
   end
 

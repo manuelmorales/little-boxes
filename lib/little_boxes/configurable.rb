@@ -16,7 +16,7 @@ module LittleBoxes
       klass.extend ClassMethods
 
       klass.class_eval do
-        class << self 
+        class << self
           attr_accessor :config
           instance_variable_set :@config, {}
         end
