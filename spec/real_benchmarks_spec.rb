@@ -1,6 +1,7 @@
 require_relative 'spec_helper'
 require 'benchmark'
 require 'logger'
+require 'ruby-prof'
 
 RSpec.describe 'Benchmark the speed', benchmark: true do
   def define_class name, &block
@@ -20,8 +21,11 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
   end
 
   def measure
+    # RubyProf.start
     b = Benchmark.measure{ iterations.times { yield } }
     @results << {name: test_name, time: b.real}
+    # results = RubyProf.stop
+    # RubyProf::CallStackPrinter.new(results).print(File.open('/tmp/performance/'+test_name+'.html', 'w'), threshold: 0)
   end
 
   before :all do
@@ -47,6 +51,9 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
         dependency :new_logger
         public :new_logger
         public :logger
+        def logger= value
+          config[:logger] = value
+        end
       end
 
       configurable_server = Server.new
@@ -57,7 +64,11 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
         get(:new_logger) { :logger }
         let(:logger) { :logger }
         letc(:server) { Server.new }
+        getc(:explicit_server) { Server.new }.then do |s, b|
+          s.logger = b.another_logger
+        end
         getc(:new_server) { configurable_server }
+        let(:another_logger) { :another_logger }
       end
 
       define_class :Logger do
@@ -87,12 +98,21 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
       box = box()
       measure { box.new_server.logger }
     end
+
+    it 'lookup logger in then block' do
+      box = box()
+      measure { box.explicit_server }
+    end
   end
 
   context 'deep' do
     before do
       define_class :Server do
         include Configurable
+
+        def logger= value
+          @config[:logger] = value
+        end
 
         dependency :logger
         dependency :new_logger
@@ -107,12 +127,16 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
 
         get(:new_logger) { :logger }
         let(:logger) { :logger }
+        let(:another_logger) { :another_logger }
 
         box(:level) do
           box(:level) do
             box(:level) do
               letc(:server) { Server.new }
               getc(:new_server) { configurable_server }
+              getc(:explicit_server) { Server.new }.then do |s, b|
+                s.logger = b.another_logger
+              end
             end
           end
         end
@@ -134,6 +158,11 @@ RSpec.describe 'Benchmark the speed', benchmark: true do
     it 'measures first dependency injection time (deep)' do
       box = box().level.level.level
       measure { box.new_server.logger }
+    end
+
+    it 'lookup logger in then block (deep)' do
+      box = box().level.level.level
+      measure { box.explicit_server }
     end
   end
 end

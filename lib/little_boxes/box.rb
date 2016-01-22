@@ -23,11 +23,11 @@ module LittleBoxes
       end
 
       def box_from_klass(name, klass)
-        let(name, eager: true) { |box| klass.new(parent: box) }
+        eager(name) { |box| klass.new(parent: box) }
       end
 
       def inline_box(name, &block)
-        let(name, eager: true) do |box|
+        eager(name) do |box|
           Class.new do
             include ::LittleBoxes::Box
 
@@ -45,39 +45,57 @@ module LittleBoxes
         end
       end
 
+      def getc(name, options={}, &block)
+        get(name, options.merge(configure: true), &block)
+      end
+
       def let(name, options={}, &block)
         get(name, options.merge(memo: true), &block)
       end
 
-      def getc(name, &block)
-        get(name, configure: true, &block)
+      def letc(name, options={}, &block)
+        let(name, options.merge(configure: true), &block)
       end
 
-      def letc(name, &block)
-        let(name, configure: true, &block)
+      def eager(name, options={}, &block)
+        let(name, options.merge(eager: true), &block)
       end
 
-      def eagerc(name, &block)
-        let(name, eager: true, configure: true, &block)
+      def eagerc(name, options={}, &block)
+        eager(name, options.merge(configure: true), &block)
       end
     end
+
+    attr_reader :parent, :entries
 
     def self.included(klass)
       klass.extend ClassMethods
     end
 
     def [] name
-      @entries[name] && @entries[name].value || @parent[name]
+      entry = @entries[name] ||= @parent.entries[name]
+      entry ? entry.value : parent[name]
     end
 
     def inspect
       "#<#{self.class.name} #{entries.keys.map(&:inspect).join(", ")}>"
     end
 
+    def method_missing(name, *args, &block)
+      if respond_to?(name)
+        self[name.to_sym]
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      @parent.respond_to?(name, include_private)
+    end
+
     private
 
     def initialize(parent: nil)
-      @memo = {}
       @parent = parent
       @entries = entry_definitions.each_with_object({}) do |(k,v), acc|
         acc[k] = v.for(self)

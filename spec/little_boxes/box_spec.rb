@@ -17,7 +17,7 @@ RSpec.describe 'Box' do
     define_class :MainBox do
       include Box
 
-      let(:logger) {|c| Logger.new level: c.log_level }
+      let(:logger) { |c| Logger.new level: c.log_level }
       get(:log_level) { 'INFO' }
       letc(:server) { Server.new }
       getc(:users_collection) { UsersCollection.new }
@@ -29,6 +29,7 @@ RSpec.describe 'Box' do
       end
 
       eagerc(:http_client) { HttpClient }
+      eager(:api_client) { |b| ApiClient.tap { |ac| ac.logger = b.logger } }
       box(:folders, FoldersBox)
       box(:files) do
         eagerc(:rest_client) { RestClient }
@@ -102,6 +103,12 @@ RSpec.describe 'Box' do
       class_dependency :logger
       public_class_method :logger
     end
+
+    define_class :ApiClient do
+      class << self
+        attr_accessor :logger
+      end
+    end
   end
 
   let(:box) { MainBox.new }
@@ -113,6 +120,7 @@ RSpec.describe 'Box' do
   define_method(:task) { box.task }
   define_method(:http_client) { HttpClient }
   define_method(:rest_client) { RestClient }
+  define_method(:api_client) { ApiClient }
 
   describe 'box' do
     it 'memoizes' do
@@ -187,10 +195,22 @@ RSpec.describe 'Box' do
     end
   end
 
-  describe 'http_client (eager loading)' do
+  describe 'http_client (configured eager loading)' do
     it 'loads on box initialization' do
       box
       expect(http_client.logger).to be_a Logger
+    end
+
+    it 'doesn\'t eager load the dependencies' do
+      expect(box).not_to receive(:logger)
+      box
+    end
+  end
+
+  describe 'api_client (configured eager loading)' do
+    it 'loads on box initialization' do
+      box
+      expect(api_client.logger).to be_a Logger
     end
 
     it 'doesn\'t eager load the dependencies' do
@@ -212,6 +232,10 @@ RSpec.describe 'Box' do
 
       it 'configures looking up the tree' do
         expect(box.folders.collection.logger).to be(logger)
+      end
+
+      it 'has access to parent' do
+        expect(box.folders.parent).to be(box)
       end
     end
 
