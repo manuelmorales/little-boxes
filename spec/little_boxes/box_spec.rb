@@ -12,6 +12,7 @@ RSpec.describe 'Box' do
       include Box
 
       letc(:collection) { FoldersCollection.new }
+      get(:some_other_logger) { SomeOtherLogger.new }
     end
 
     define_class :MainBox do
@@ -51,6 +52,9 @@ RSpec.describe 'Box' do
       def initialize(attrs)
         @level = attrs[:level]
       end
+    end
+
+    define_class :SomeOtherLogger do
     end
 
     define_class :UsersCollection do
@@ -278,6 +282,11 @@ RSpec.describe 'Box' do
 
       it 'keeps configuration options' do
         expect(box.collection.logger).to be_a Logger
+      end
+
+      it 'does not run entries procs' do
+        expect(SomeOtherLogger).not_to receive(:new)
+        box
       end
     end
   end

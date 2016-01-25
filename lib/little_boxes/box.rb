@@ -15,7 +15,9 @@ module LittleBoxes
         importable_definitions = klass.entry_definitions
         entry_definitions.merge!(importable_definitions)
         importable_definitions.each_key do |name|
-          define_method(name) { @entries[name].value }
+          define_method(name) do
+            @entries[name].value
+          end
         end
       end
 
@@ -47,7 +49,9 @@ module LittleBoxes
       def get(name, options={}, &block)
         entry_definitions[name] = EntryDefinition.new(name, options, &block)
           .tap do |entry|
-          define_method(name) { @entries[name].value }
+          define_method(name) do
+            @entries[name].value
+          end
         end
       end
 
