@@ -27,6 +27,7 @@ RSpec.describe 'Box' do
         task.logger = :specific_logger
         task.log_level = box.log_level
       end
+      import FoldersBox
 
       eagerc(:http_client) { HttpClient }
       eager(:api_client) { |b| ApiClient.tap { |ac| ac.logger = b.logger } }
@@ -261,6 +262,22 @@ RSpec.describe 'Box' do
       it 'eager loads eager loadable stuff on the second level' do
         box
         expect(rest_client.logger).to be logger
+      end
+    end
+  end
+
+  describe 'imported boxes' do
+    describe 'given a box' do
+      it 'imports entries' do
+        expect(box.collection).to be_a(FoldersCollection)
+      end
+
+      it 'keeps memoization options' do
+        expect(box.collection).to be(box.collection)
+      end
+
+      it 'keeps configuration options' do
+        expect(box.collection.logger).to be_a Logger
       end
     end
   end
