@@ -48,6 +48,11 @@ module LittleBoxes
           self.class.config[name]
         end
       end
+
+      def configure(&block)
+        yield @config
+        self
+      end
     end
   end
 end
