@@ -12,6 +12,7 @@ module LittleBoxes
 
     def configure(&block)
       yield @config
+      self
     end
 
     private
