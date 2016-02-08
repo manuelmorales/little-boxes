@@ -84,8 +84,7 @@ module LittleBoxes
 
     def [] name
       entry = @entries[name] ||= (@parent && @parent.entries[name])
-      value = entry ? entry.value : (parent && parent[name])
-      value || fail(DependencyNotFound, "Dependency #{name} not found")
+      entry ? entry.value : (parent && parent[name])
     end
 
     def inspect

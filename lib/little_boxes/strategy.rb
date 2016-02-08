@@ -65,9 +65,13 @@ module LittleBoxes
     end
 
     def do_configure(subject, box)
-      subject.config = Hash.new do |h, name|
-        h[name] = box[name]
+      config = {box: box}
+
+      config.default_proc = Proc.new do |h, name|
+        h[name] = h[:box][name]
       end
+
+      subject.config = config
 
       subject
     end

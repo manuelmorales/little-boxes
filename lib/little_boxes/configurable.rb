@@ -29,19 +29,27 @@ module LittleBoxes
     end
 
     module ClassMethods
-      def dependency name
+      def dependency name, &default_block
+        default_block ||= Proc.new do
+          fail(DependencyNotFound, "Dependency #{name} not found")
+        end
+
         private
 
         define_method name do
-          @config[name]
+          @config[name] ||= default_block.call(@config[:box])
         end
       end
 
-      def class_dependency name
+      def class_dependency name, &default_block
+        default_block ||= Proc.new do
+          fail(DependencyNotFound, "Dependency #{name} not found")
+        end
+
         private
 
         define_singleton_method name do
-          @config[name]
+          @config[name] ||= default_block.call(@config[:box])
         end
 
         define_method name do

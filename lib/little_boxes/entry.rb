@@ -9,14 +9,17 @@ module LittleBoxes
       self.eager = eager
       self.configure = configure
       self.then_block = then_block
-
-      @block = Strategy.for(
-        block, memo: @memo, configure: @configure, then_block: @then_block
-      )
+      self.block = block
     end
 
     def value
       @block.call(@box)
+    end
+
+    def block= block
+      @block = Strategy.for(
+        block, memo: @memo, configure: @configure, then_block: @then_block
+      )
     end
   end
 end

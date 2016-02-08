@@ -37,6 +37,9 @@ RSpec.describe 'Box' do
       box(:files) do
         eagerc(:rest_client) { RestClient }
       end
+
+      letc(:client_with_defaults) { |b| b.client_with_defaults_class.new }
+      letc(:client_with_defaults_class) { ClientWithDefaults }
     end
 
     define_class :Server do
@@ -121,6 +124,13 @@ RSpec.describe 'Box' do
 
       class_dependency :idontexist
       public_class_method :idontexist
+    end
+
+    define_class :ClientWithDefaults do
+      include Configurable
+
+      dependency(:dep_with_default) { |b| b.object_id }
+      class_dependency(:class_dep_with_default) { |b| b.object_id }
     end
   end
 
@@ -288,6 +298,18 @@ RSpec.describe 'Box' do
         expect(SomeOtherLogger).not_to receive(:new)
         box
       end
+    end
+  end
+
+  describe 'defaults' do
+    it 'is supported at instance level' do
+      client = box.client_with_defaults
+      expect(client.dep_with_default).to eq box.object_id
+    end
+
+    it 'is supported at class level' do
+      client_class = box.client_with_defaults_class
+      expect(client_class.class_dep_with_default).to eq box.object_id
     end
   end
 end
