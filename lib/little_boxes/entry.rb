@@ -1,6 +1,6 @@
 module LittleBoxes
   class Entry
-    attr_accessor :name, :memo, :box, :eager, :block, :configure, :then_block
+    attr_accessor :name, :memo, :box, :eager, :block, :configure, :then_block, :mutex
 
     def initialize(name:, eager:, memo:, box:, block:, configure:, then_block:)
       self.name = name
@@ -10,10 +10,15 @@ module LittleBoxes
       self.configure = configure
       self.then_block = then_block
       self.block = block
+      self.mutex = Mutex.new if @memo
     end
 
     def value
-      @block.call(@box)
+      if @memo
+        @mutex.synchronize { @block.call(@box) }
+      else
+        @block.call(@box)
+      end
     end
 
     def block= block
