@@ -53,7 +53,7 @@ module LittleBoxes
         end
 
         define_method name do
-          self.class.config[name]
+          self.class.config[name] ||= default_block.call(@config[:box])
         end
       end
 

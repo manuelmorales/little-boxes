@@ -131,6 +131,7 @@ RSpec.describe 'Box' do
 
       dependency(:dep_with_default) { |b| b.object_id }
       class_dependency(:class_dep_with_default) { |b| b.object_id }
+      class_dependency(:another_class_dep_with_default) { |b| b.object_id }
     end
   end
 
@@ -310,6 +311,11 @@ RSpec.describe 'Box' do
     it 'is supported at class level' do
       client_class = box.client_with_defaults_class
       expect(client_class.class_dep_with_default).to eq box.object_id
+    end
+
+    it 'is supported at class level and accessible at instance level' do
+      client = box.client_with_defaults
+      expect(client.another_class_dep_with_default).to eq box.object_id
     end
   end
 end
