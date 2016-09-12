@@ -40,6 +40,8 @@ RSpec.describe 'Box' do
 
       letc(:client_with_defaults) { |b| b.client_with_defaults_class.new }
       letc(:client_with_defaults_class) { ClientWithDefaults }
+      let(:client_with_class_defaults) { |b| b.client_with_class_defaults_class.new }
+      letc(:client_with_class_defaults_class) { ClientWithClassDefaults }
     end
 
     define_class :Server do
@@ -131,6 +133,12 @@ RSpec.describe 'Box' do
 
       dependency(:dep_with_default) { |b| b.object_id }
       class_dependency(:class_dep_with_default) { |b| b.object_id }
+      class_dependency(:another_class_dep_with_default) { |b| b.object_id }
+    end
+
+    define_class :ClientWithClassDefaults do
+      include Configurable
+
       class_dependency(:another_class_dep_with_default) { |b| b.object_id }
     end
   end
@@ -314,7 +322,7 @@ RSpec.describe 'Box' do
     end
 
     it 'is supported at class level and accessible at instance level' do
-      client = box.client_with_defaults
+      client = box.client_with_class_defaults
       expect(client.another_class_dep_with_default).to eq box.object_id
     end
   end
