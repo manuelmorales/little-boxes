@@ -2,13 +2,14 @@ module LittleBoxes
   class MemoizedDependant
     include DependantRegistry
 
-    def initialize(*args)
-      @mutex = Mutex.new
-      super
+    def get
+      @value ||= mutex.synchronize { run }
     end
 
-    def get
-      @value ||= @mutex.synchronize { run }
+    private
+
+    def mutex
+      @mutex ||= Mutex.new
     end
   end
 end
