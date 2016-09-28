@@ -3,7 +3,7 @@ module LittleBoxes
     include DependantRegistry
 
     def initialize(*args)
-      @mutex = Mutext.new
+      @mutex = Mutex.new
       super
     end
 
