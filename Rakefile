@@ -8,3 +8,7 @@ desc 'Run all specs'
 RSpec::Core::RakeTask.new('spec') do |spec|
   spec.rspec_opts = %w{}
 end
+
+
+require 'little_boxes'
+Dir.glob(LittleBoxes.root_path + 'tasks/*').each { |p| load p }

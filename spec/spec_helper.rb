@@ -14,13 +14,17 @@ module LittleBoxes
         c.color = true
         c.tty = true
         c.formatter = :documentation # :documentation, :progress, :html, :textmate
-        c.filter_run_excluding benchmark: !benchmark_enabled?
+        c.filter_run_excluding benchmark: !benchmark_enabled?, docs: !docs?
         c.include SpecHelper
       end
     end
 
     def self.benchmark_enabled?
       ENV['BENCH'] == "true"
+    end
+
+    def self.docs?
+      ENV['DOCS'] == "true"
     end
   end
 end
