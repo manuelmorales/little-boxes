@@ -41,6 +41,8 @@ module LittleBoxes
           Class.new do
             include ::LittleBoxes::Box
 
+            define_singleton_method(:name) { "Box[#{name}]" }
+
             instance_eval(&block)
           end.new(parent: box)
         end

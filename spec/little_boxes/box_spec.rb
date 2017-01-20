@@ -292,6 +292,10 @@ RSpec.describe 'Box' do
         box
         expect(rest_client.logger).to be logger
       end
+
+      it 'has a name' do
+        expect(box.files.inspect).to match(/files/)
+      end
     end
   end
 
