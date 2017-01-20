@@ -244,6 +244,12 @@ RSpec.describe 'Box' do
       expect(box).not_to receive(:logger)
       box
     end
+
+    it 'can be reconfigured' do
+      http_client.logger = :new_logger
+
+      expect(http_client.logger).to be :new_logger
+    end
   end
 
   describe 'api_client (configured eager loading)' do

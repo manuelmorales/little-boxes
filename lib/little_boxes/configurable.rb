@@ -52,8 +52,14 @@ module LittleBoxes
 
         private
 
+        @config ||= {}
+
         define_singleton_method name do
           @config[name] ||= default_block.call(@config[:box])
+        end
+
+        define_singleton_method "#{name}=" do |value|
+          @config[name] = value
         end
 
         define_method name do
