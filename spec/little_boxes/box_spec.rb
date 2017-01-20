@@ -197,6 +197,12 @@ RSpec.describe 'Box' do
       expect(task.log_level).to eq box.log_level
     end
 
+    it 'can be reconfigured' do
+      server.logger = :new_logger
+
+      expect(server.logger).to be :new_logger
+    end
+
     pending 'test for get, getc, let'
   end
 

@@ -39,6 +39,10 @@ module LittleBoxes
         define_method name do
           @config[name] ||= default_block.call(@config[:box])
         end
+
+        define_method "#{name}=" do |value|
+          @config[name] = value
+        end
       end
 
       def class_dependency name, &default_block
