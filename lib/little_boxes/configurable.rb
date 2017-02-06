@@ -1,7 +1,5 @@
 module LittleBoxes
-  module Configurable
-    attr_accessor :config
-
+  module Initializable
     def initialize(options = {})
       @config = {}
 
@@ -9,6 +7,10 @@ module LittleBoxes
         config[k] = options[k]
       end
     end
+  end
+
+  module Configurable
+    attr_accessor :config
 
     def configure(&block)
       yield @config
@@ -18,6 +20,12 @@ module LittleBoxes
     private
 
     def self.included(klass)
+      ancestors = klass.ancestors
+
+      if ancestors.index(Object) - ancestors.index(Configurable) == 1
+        klass.include Initializable
+      end
+
       klass.extend ClassMethods
 
       klass.class_eval do
