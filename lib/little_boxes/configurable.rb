@@ -1,15 +1,5 @@
 module LittleBoxes
-  module Initializable
-    def initialize(options = {})
-      @config = {}
-
-      options.keys.each do |k|
-        config[k] = options[k]
-      end
-    end
-  end
-
-  module Configurable
+  module Dependant
     attr_accessor :config
 
     def configure(&block)
@@ -20,29 +10,23 @@ module LittleBoxes
     private
 
     def self.included(klass)
-      ancestors = klass.ancestors
-
-      if ancestors.index(Object) - ancestors.index(Configurable) == 1
-        klass.include Initializable
-      end
-
       klass.extend ClassMethods
-
-      klass.class_eval do
-        class << self
-          attr_accessor :config
-          instance_variable_set :@config, {}
-        end
-      end
     end
 
     module ClassMethods
+      def self.extended(base)
+        base.class_eval do
+          class << self
+            attr_accessor :config
+            instance_variable_set :@config, {}
+          end
+        end
+      end
+
       def dependency name, &default_block
         default_block ||= Proc.new do
           fail(DependencyNotFound, "Dependency #{name} not found")
         end
-
-        private
 
         define_method name do
           @config[name] ||= default_block.call(@config[:box])
@@ -57,8 +41,6 @@ module LittleBoxes
         default_block ||= Proc.new do
           fail(DependencyNotFound, "Dependency #{name} not found")
         end
-
-        private
 
         @config ||= {}
 
@@ -79,6 +61,13 @@ module LittleBoxes
         yield @config
         self
       end
+    end
+  end
+
+  module Configurable
+    def self.included(klass)
+      klass.include Dependant
+      klass.include Initializable
     end
   end
 end
