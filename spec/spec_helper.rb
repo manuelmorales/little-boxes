@@ -6,6 +6,7 @@ $LOAD_PATH.unshift File.expand_path('lib')
 require 'little_boxes'
 
 $LOAD_PATH.unshift File.expand_path('spec/support')
+require 'class_support'
 
 module LittleBoxes
   module SpecHelper
@@ -16,6 +17,7 @@ module LittleBoxes
         c.formatter = :documentation # :documentation, :progress, :html, :textmate
         c.filter_run_excluding benchmark: !benchmark_enabled?, docs: !docs?
         c.include SpecHelper
+        c.include ClassSupport
       end
     end
 

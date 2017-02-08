@@ -1,12 +1,6 @@
 require_relative '../spec_helper'
 
 RSpec.describe 'Initializable' do
-  def define_class name, base = Object, &block
-    stub_const(name.to_s, Class.new(base)).tap do |c|
-      c.class_eval(&block)
-    end
-  end
-
   before :each do
     define_class :User do
       include Initializable
