@@ -40,7 +40,20 @@ RSpec.describe 'Dependant' do
       expect(server.logger).to be :the_logger
     end
 
-    it 'passes the box to the default lambda'
+    it 'passes the box to the default lambda' do
+      define_class :Server do
+        include Dependant
+        dependency(:logger) { |box| box }
+      end
+
+      server = Server.new
+
+      server.configure do |c|
+       c[:box] = :the_box
+      end
+
+      expect(server.logger).to be :the_box
+    end
   end
 
   describe 'class_dependency' do
@@ -77,7 +90,18 @@ RSpec.describe 'Dependant' do
       expect(Server.logger).to be :the_logger
     end
 
-    it 'passes the box to the default lambda'
+    it 'passes the box to the default lambda' do
+      define_class :Server do
+        include Dependant
+        class_dependency(:logger) { |box| box }
+      end
+
+      Server.configure do |c|
+       c[:box] = :the_box
+      end
+
+      expect(Server.logger).to be :the_box
+    end
   end
 
   it 'respects original initializer' do
