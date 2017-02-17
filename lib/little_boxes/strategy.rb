@@ -3,65 +3,17 @@ module LittleBoxes
     module_function
 
     def for(block, memo: false, configure: false, then_block: nil)
-      case [memo, configure, !!then_block]
-      when [true, true, true]
-        memo_configure_then(block, then_block)
-      when [true, true, false]
-        memo_configure(block)
-      when [true, false, true]
-        memo_then(block, then_block)
-      when [true, false, false]
-        memo(block)
-      when [false, true, true]
-        configure_then(block, then_block)
-      when [false, true, false]
-        configure(block)
-      when [false, false, true]
-        then_block(block, then_block)
+      code = "block.call(bx)"
+      code = "do_configure(#{code}, bx)" if configure
+      code = "#{code}.tap { |v| then_block.call v, bx }" if then_block
+
+      if memo
+        code = "value = nil; ->(bx) { value ||= #{code} }"
       else
-        default(block)
+        code = "->(bx) { #{code} }"
       end
-    end
 
-    def memo_configure(block)
-      value = nil
-      -> (bx) { value ||= do_configure(block.call(bx), bx) }
-    end
-
-    def memo_then(block, then_block)
-      value = nil
-      -> (bx) { value ||= block.call(bx).tap { |v| then_block.call v, bx } }
-    end
-
-    def memo_configure_then(block, then_block)
-      value = nil
-      -> (bx) do
-        value ||= do_configure(block.call(bx), bx)
-          .tap{ |v| then_block.call v, bx }
-      end
-    end
-
-    def memo(block)
-      value = nil
-      -> (bx) { value ||= block.call(bx) }
-    end
-
-    def configure(block)
-      -> (bx) { do_configure(block.call(bx), bx) }
-    end
-
-    def then_block(block, then_block)
-      -> (bx) { block.call(bx).tap { |v| then_block.call v, bx } }
-    end
-
-    def configure_then(block, then_block)
-      -> (bx) do
-        do_configure(block.call(bx), bx).tap{ |v| then_block.call v, bx }
-      end
-    end
-
-    def default(block)
-      block
+      eval code
     end
 
     def do_configure(subject, box)
