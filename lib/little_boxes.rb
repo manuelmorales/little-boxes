@@ -1,3 +1,5 @@
+require 'pathname'
+
 module LittleBoxes
   def self.root_path
     Pathname.new(__FILE__) + '../..'
