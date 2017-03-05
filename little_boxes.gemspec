@@ -10,10 +10,10 @@ Gem::Specification.new do |spec|
   spec.version       = LittleBoxes::VERSION
   spec.authors       = ["Workshare's dev team"]
   spec.email         = ['_Development@workshare.com']
-  spec.description   = File.read('README.md').split("\n").reject{|l| l.length == 0 || l =~ /^[#=]+/ }.first
-  spec.summary       = spec.description
+  spec.summary       = "Dependency injection library in Ruby."
+  spec.description   = "LittleBoxes is a light library that provides a dependency tree that represents your application configuration. It automatically configures your dependencies and lazy-loads by default."
   spec.homepage      = "https://github.com/worshare/#{spec.name.gsub('_','-')}"
-  spec.license       = "Copyright"
+  spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -21,5 +21,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "rake"
+  spec.add_development_dependency "rake", "~> 12.0"
 end
