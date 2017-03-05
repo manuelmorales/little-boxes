@@ -1,5 +1,9 @@
 # LittleBoxes
 
+[![Gem Version](https://badge.fury.io/rb/little_boxes.svg)](http://badge.fury.io/rb/little_boxes)
+[![Build Status](https://travis-ci.org/manuelmorales/little-boxes.svg?branch=master)](https://travis-ci.org/manuelmorales/little-boxes)
+[![Code Climate](https://codeclimate.com/github/manuelmorales/little-boxes/badges/gpa.svg)](https://codeclimate.com/github/manuelmorales/little-boxes)
+
 Dependency injection library in Ruby.
 
 ## Intro
