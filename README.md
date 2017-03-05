@@ -3,6 +3,8 @@
 [![Gem Version](https://badge.fury.io/rb/little_boxes.svg)](http://badge.fury.io/rb/little_boxes)
 [![Build Status](https://travis-ci.org/manuelmorales/little-boxes.svg?branch=master)](https://travis-ci.org/manuelmorales/little-boxes)
 
+![LittleBoxes](assets/little-boxes-logo-xs.png "LittleBoxes")
+
 LittleBoxes is a light library that helps to do dependency injection in Ruby.
 It's main features are:
 
