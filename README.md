@@ -12,12 +12,15 @@ It's main features are:
 * Automatically configures your dependencies.
 * Lazy-loads by default.
 
-More information about LittleBoxes can be found on this presentation:
-[http://slides.com/manuelmorales-1/little-boxes-1](http://slides.com/manuelmorales-1/little-boxes-1).
-And a demo application built with it in
+For an introduction to it you can watch the talk below, given at the
+[London Ruby User Group](https://skillsmatter.com/skillscasts/9918-dependency-injection-with-little-boxes).
+Slides are here [http://slides.com/manuelmorales-1/little-boxes-1](http://slides.com/manuelmorales-1/little-boxes-1).
+
+[![Dependency Injection with LittleBoxes at LRUG](assets/presentation.jpg "Dependency Injection with LittleBoxes at LRUG")](https://skillsmatter.com/skillscasts/9918-dependency-injection-with-little-boxes)
+
+
+Also, there is a [Todo-Backend](https://www.todobackend.com/) app built with LittleBoxes in
 [https://github.com/manuelmorales/todo-backend-little-boxes](https://github.com/manuelmorales/todo-backend-little-boxes).
-
-
 ## Intro
 
 LittleBoxes allows you to create a _box_ which is capable of providing already
