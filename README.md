@@ -157,7 +157,7 @@ For those cases we can force the Box to eager-configure such dependency:
 ```ruby
 class MainBox
   # ...
-  eager_letc(:users_api) { UsersApi }
+  eagerc(:users_api) { UsersApi }
 end
 ```
 
